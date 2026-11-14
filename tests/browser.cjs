@@ -7,6 +7,7 @@ const os=require('node:os');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const {KEY,UPGRADE_COPY,IMPORT_COPY,defaults}=require('../data.js');
+const {buildPreview,PREVIEW_KEY,CACHE_PREFIX}=require('../scripts/build-preview.cjs');
 const root=path.resolve(__dirname,'..');
 const oldRef='d17a393806524b1791664bf043ce516c02c93e2f';
 let browser,server,base,temp,serveOld=false;
@@ -15,10 +16,12 @@ before(async()=>{
  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(temp,'key.pem'),'-out',path.join(temp,'cert.pem'),'-days','1','-subj','/CN=localhost'],{stdio:'ignore'});
  const oldHtml=execFileSync('git',['show',oldRef+':index.html'],{cwd:root});
  const oldSw=execFileSync('git',['show',oldRef+':sw.js'],{cwd:root});
+ buildPreview(root,path.join(temp,'preview'),execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim());
  server=https.createServer({key:fs.readFileSync(path.join(temp,'key.pem')),cert:fs.readFileSync(path.join(temp,'cert.pem'))},(req,res)=>{
-  const filename=new URL(req.url,'https://localhost').pathname.replace(/^\/life-reset\//,'')||'index.html';
+  const urlPath=new URL(req.url,'https://localhost').pathname,isPreview=urlPath.startsWith('/life-reset/preview/0.4.1/');
+  const filename=urlPath.replace(isPreview?/^\/life-reset\/preview\/0.4.1\//:/^\/life-reset\//,'')||'index.html';
   if(!['index.html','data.js','sw.js','manifest.webmanifest','icon.svg'].includes(filename)){res.writeHead(404);return res.end()}
-  const body=serveOld&&filename==='index.html'?oldHtml:serveOld&&filename==='sw.js'?oldSw:fs.readFileSync(path.join(root,filename));
+  const body=isPreview?fs.readFileSync(path.join(temp,'preview',filename)):serveOld&&filename==='index.html'?oldHtml:serveOld&&filename==='sw.js'?oldSw:fs.readFileSync(path.join(root,filename));
   const type=filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':filename.endsWith('.webmanifest')?'application/manifest+json':'text/html';
   res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});res.end(body);
  });
@@ -135,4 +138,27 @@ test('v0.4 service worker updates to 0.4.1 and the new script loads offline with
  assert.deepEqual(JSON.parse(await saved(page)),before);
  await context.setOffline(true);await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
  await page.locator('#tasks [data-task="move"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='40 XP');await page.reload();assert.equal(await page.locator('#xp').textContent(),'40 XP');assert.deepEqual(errors,[]);
+});
+test('preview and installed v0.4 share an origin without sharing data or offline caches',async t=>{
+ serveOld=true;t.after(()=>{serveOld=false});
+ const original={...defaults(),checks:{'2026-11-14':{walk:true}},xp:20,goals:['Основная цель'],tx:[{id:'original',kind:'income',amount:2500,date:'2026-11-14'}]};
+ const raw=JSON.stringify(original),{page:production,context}=await open(t,{raw,serviceWorkers:'allow'});
+ await production.evaluate(()=>navigator.serviceWorker.ready);await production.reload();
+ await production.waitForFunction(()=>!!navigator.serviceWorker.controller);
+ const preview=await context.newPage();await preview.goto(base+'preview/0.4.1/');
+ await preview.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/preview/0.4.1/sw.js'));
+ assert.equal(await preview.evaluate(()=>KEY),PREVIEW_KEY);
+ assert.equal(await preview.locator('#xp').textContent(),'0 XP');assert.equal(await preview.locator('#previewNotice').isVisible(),true);
+ const manifest=await preview.evaluate(async()=>await (await fetch('manifest.webmanifest')).json());assert.equal(manifest.short_name,'LR Тест');
+ preview.once('dialog',d=>d.accept());await importFile(preview,original);await toast(preview,'Данные восстановлены');
+ await preview.locator('[data-tab="financeView"]').click();await preview.locator('#amount').fill('50');await preview.locator('#saveTx').click();await toast(preview,'Операция сохранена');
+ assert.equal(await saved(production),raw);
+ assert.equal(await preview.evaluate(key=>JSON.parse(localStorage.getItem(key)).tx.length,PREVIEW_KEY),2);
+ const keys=await preview.evaluate(()=>caches.keys());assert.ok(keys.includes('life-reset-v4'));assert.ok(keys.includes(CACHE_PREFIX+'v1'));
+ const registrations=await preview.evaluate(async()=>Promise.all((await navigator.serviceWorker.getRegistrations()).map(r=>r.scope)));
+ assert.ok(registrations.includes(base));assert.ok(registrations.includes(base+'preview/0.4.1/'));
+ await context.setOffline(true);await preview.reload();assert.equal(await preview.locator('#previewNotice').isVisible(),true);assert.equal(await preview.locator('#xp').textContent(),'20 XP');
+ await production.reload();assert.equal(await production.locator('#previewNotice').count(),0);assert.equal(await saved(production),raw);
+ await context.setOffline(false);await preview.locator('[data-tab="analytics"]').click();preview.once('dialog',d=>d.accept());await preview.locator('#resetAll').click();await toast(preview,'Данные удалены');
+ assert.equal(await saved(production),raw);assert.equal(await preview.evaluate(key=>JSON.parse(localStorage.getItem(key)).tx.length,PREVIEW_KEY),0);
 });

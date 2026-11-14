@@ -1,0 +1,31 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const os=require('node:os');
+const path=require('node:path');
+const vm=require('node:vm');
+const {buildPreview,PREVIEW_KEY,CACHE_PREFIX}=require('../scripts/build-preview.cjs');
+test('preview isolates all storage keys, write coordination, cache and installed app identity',t=>{
+ const target=fs.mkdtempSync(path.join(os.tmpdir(),'lr-preview-'));t.after(()=>fs.rmSync(target,{recursive:true,force:true}));
+ const commit='13e65902dabe0138d4df41ca0a58cbb5a2e31594';
+ const files=buildPreview(path.resolve(__dirname,'..'),target,commit),sandbox={};
+ vm.runInNewContext(files['data.js'],sandbox);
+ const {KEY,UPGRADE_COPY,IMPORT_COPY}=sandbox.LifeResetData;
+ assert.equal(KEY,PREVIEW_KEY);assert.notEqual(KEY,'life-reset-v2');
+ for(const key of [KEY,UPGRADE_COPY,IMPORT_COPY])assert.ok(key.startsWith(PREVIEW_KEY));
+ assert.ok(files['sw.js'].includes(`k.startsWith('${CACHE_PREFIX}')`));
+ assert.ok(!files['sw.js'].includes("startsWith('life-reset-')"));
+ assert.ok(!files['sw.js'].includes('caches.match('));
+ const manifest=JSON.parse(files['manifest.webmanifest']);
+ assert.equal(manifest.id,'./');assert.equal(manifest.scope,'./');assert.equal(manifest.start_url,'./');assert.equal(manifest.short_name,'LR Тест');
+ assert.ok(files['index.html'].includes('id="previewNotice"'));assert.ok(files['index.html'].includes('ТЕСТ · 0.4.1'));
+ assert.equal(JSON.parse(files['preview.json']).sourceCommit,commit);
+ for(const name of ['index.html','data.js','sw.js','manifest.webmanifest','icon.svg','preview.json'])assert.ok(fs.existsSync(path.join(target,name)));
+});
+test('preview build refuses unexpected source versions',t=>{
+ const source=fs.mkdtempSync(path.join(os.tmpdir(),'lr-preview-source-'));t.after(()=>fs.rmSync(source,{recursive:true,force:true}));
+ for(const file of ['index.html','data.js','sw.js','manifest.webmanifest','icon.svg'])fs.copyFileSync(path.resolve(__dirname,'..',file),path.join(source,file));
+ fs.writeFileSync(path.join(source,'data.js'),"const KEY='changed';");
+ assert.throws(()=>buildPreview(source,path.join(source,'out'),'a'.repeat(40)),/Preview source changed/);
+ assert.ok(!fs.existsSync(path.join(source,'out')));
+});

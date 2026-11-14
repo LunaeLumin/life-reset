@@ -3,7 +3,7 @@
   "version": "0.4.1",
   "private": true,
   "scripts": {
-    "test": "node --test tests/data.test.cjs",
+    "test": "node --test tests/*.test.cjs",
     "test:browser": "node --test tests/browser.cjs"
   },
   "devDependencies": {
