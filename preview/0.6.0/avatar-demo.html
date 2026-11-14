@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#101114">
+ <title>Персонаж — Life Reset</title>
+ <link rel="icon" href="icon.svg" type="image/svg+xml">
+ <link rel="stylesheet" href="avatar.css">
+ <style>
+  :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101114;color:#f4f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:calc(20px + env(safe-area-inset-top)) 16px calc(26px + env(safe-area-inset-bottom))}main{max-width:430px;margin:auto}a{color:#929eaf;text-decoration:none;font-size:12px}a:focus-visible{outline:2px solid #d9f36a;outline-offset:4px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}header span{font-size:10px;letter-spacing:.13em;color:#d9f36a}h1{font-size:26px;letter-spacing:-.03em;margin:0 0 7px}p{font-size:13px;line-height:1.5;color:#929eaf;margin:0 0 18px}.demo-card{padding:18px;border:1px solid #2b2f38;border-radius:25px;background:#191b20}.demo-note{margin:15px 4px 0;font-size:11px;text-align:center}
+ </style>
+</head>
+<body>
+ <main>
+  <header><a href="./">← Life Reset</a><span>ПЕРСОНАЖ · ДЕМО</span></header>
+  <h1>Расти вместе с привычками</h1>
+  <p>От первых шагов до Титана. Добавляй опыт или выбирай этап, чтобы увидеть преображение.</p>
+  <div class="demo-card" id="avatarDemo"></div>
+  <p class="demo-note">Кнопки меняют только демонстрационный XP.<br>Заработанный опыт Life Reset сохраняется отдельно.</p>
+ </main>
+ <script src="progression.js"></script>
+ <script src="avatar-component.js"></script>
+ <script>
+  const demoAvatar=LifeResetAvatar.mount(document.getElementById('avatarDemo'),{xp:0,demo:true});
+  if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ </script>
+</body>
+</html>
