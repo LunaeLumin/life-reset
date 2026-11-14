@@ -16,8 +16,9 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 </style>
 </head>
 <body>
-<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.4</span></header>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.4.1</span></header>
 <main>
+<div id="dataWarning" class="card" role="alert" hidden><p>Не удалось прочитать сохранённые данные. Исходная запись сохранена без изменений. Скачай её для восстановления или импортируй исправную копию в разделе «Ещё».</p><button id="exportOriginal" class="secondary">Скачать исходную запись</button></div>
 <section id="dashboard" class="view active">
  <div class="card"><div class="hero"><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="bar"><i id="xpbar"></i></div></div>
  <div class="card"><div class="section-head"><h2>Характеристики</h2><span class="eyebrow">ПРОГРЕСС</span></div><div class="stats" id="stats"></div></div>
@@ -38,7 +39,7 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 <section id="analytics" class="view">
  <div class="card"><div class="eyebrow">Всего заработано</div><div class="level" id="totalXp">0 XP</div><small class="muted">Опыт за выполненные задания сохраняется между днями</small></div>
  <div class="card"><h2>Сводка</h2><div id="analyticsText" class="hint"></div></div>
- <div class="card"><h2>Данные приложения</h2><p class="hint">Экспортируй резервную копию перед очисткой браузера или переносом на другое устройство.</p><div class="actions"><button id="export">Экспорт данных</button><button id="importBtn" class="secondary">Импорт копии</button><input id="importFile" type="file" accept="application/json" hidden></div><p class="hint" id="backupDate">Резервная копия ещё не создавалась.</p></div>
+ <div class="card"><h2>Данные приложения</h2><p class="hint">Экспортируй резервную копию перед очисткой браузера или переносом на другое устройство.</p><div class="actions"><button id="export">Экспорт данных</button><button id="importBtn" class="secondary">Импорт копии</button><input id="importFile" type="file" accept="application/json,.json" hidden></div><p class="hint" id="backupDate">Резервная копия ещё не создавалась.</p><div class="actions"><button id="exportBeforeUpgrade" class="secondary" hidden>Копия до обновления</button><button id="exportBeforeImport" class="secondary" hidden>Копия до импорта</button></div></div>
  <div class="card"><h2>Управление</h2><div class="actions"><button id="resetChecks" class="secondary">Сбросить отметки сегодня</button><button id="resetAll" class="danger">Удалить все данные</button></div></div>
 </section>
 </main>
@@ -57,9 +58,10 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
   <div class="dialog-actions"><button type="button" class="secondary" id="cancelTask">Отмена</button><button type="submit">Добавить привычку</button></div>
  </form>
 </dialog>
-<nav class="nav"><div class="nav-inner"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="habits">Привычки</button><button data-tab="goals">Цели</button><button data-tab="financeView">Финансы</button><button data-tab="analytics">Ещё</button></div></nav><div class="toast" id="toast"></div>
+<nav class="nav"><div class="nav-inner"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="habits">Привычки</button><button data-tab="goals">Цели</button><button data-tab="financeView">Финансы</button><button data-tab="analytics">Ещё</button></div></nav><div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="data.js"></script>
 <script>
-const KEY='life-reset-v2', CATS={health:'Здоровье',discipline:'Дисциплина',growth:'Развитие',finance:'Финансы'};
+const {KEY,CATS,UPGRADE_COPY,IMPORT_COPY,defaults,progress,normalize,Store}=LifeResetData;
 const FOCUS_TIPS=[
  'Стабильность важнее идеального дня.',
  'Если сил мало, сделай всего 5 минут. Это тоже движение вперёд.',
@@ -83,58 +85,66 @@ const FOCUS_TIPS=[
  'Каждый небольшой шаг — это реальное действие, а не обещание себе.'
 ];
 const today=()=>new Date().toLocaleDateString('sv-SE');
-const defaults=()=>({version:3,xp:0,checks:{},tasks:[{id:'walk',name:'Пройти 7 000 шагов',cat:'health'},{id:'move',name:'15 минут движения',cat:'health'},{id:'learn',name:'30 минут обучения',cat:'growth'},{id:'read',name:'10 минут чтения',cat:'growth'},{id:'spend',name:'Записать расходы',cat:'finance'}],goals:[],tx:[],focusIndex:0,backupAt:null});
-function progress(data){
- const counts={health:0,discipline:0,growth:0,finance:0};
- let completed=0;
- for(const day of Object.values(data.checks||{})){
-  if(!day||typeof day!=='object')continue;
-  for(const task of data.tasks){
-   if(day[task.id]===true){completed++;if(counts[task.cat]!==undefined)counts[task.cat]++}
+const store=new Store();
+let snapshot=store.read(),s=snapshot.data;
+const $=id=>document.getElementById(id);const money=n=>Math.round(n).toLocaleString('ru-RU')+' ₸';
+function refresh(){snapshot=store.read();s=snapshot.data;render()}
+function errorMessage(error){
+ if(error.code==='conflict'||error.code==='stale')return 'Данные изменились в другом окне. Проверь их и повтори действие.';
+ if(error.code==='invalid'||error instanceof SyntaxError)return 'Данные не прошли проверку. Сохранённая запись не изменена.';
+ return 'Не удалось сохранить данные. Проверь свободное место и доступ к хранилищу, затем повтори действие.';
+}
+async function persist(change,options){
+ try{
+  let result;
+  for(let attempt=0;;attempt++){
+   try{result=await store.update(change,options);break}
+   catch(error){if(error.code!=='stale'||attempt===3)throw error;await new Promise(resolve=>setTimeout(resolve,50))}
   }
+  refresh();
+  if(result.cleanupFailed){toast('Основные данные удалены, но локальные копии удалить не удалось');return false}
+  return result.changed;
+ }catch(error){refresh();toast(errorMessage(error));return false}
+}
+async function captureForReplacement(discard=false){
+ for(let attempt=0;;attempt++){
+  try{return await store.capture({discard})}
+  catch(error){if(error.code!=='stale'||attempt===3)throw error;await new Promise(resolve=>setTimeout(resolve,50))}
  }
- return {xp:20*completed,counts};
 }
-function normalize(raw){
- if(!raw||![2,3].includes(raw.version)||!Array.isArray(raw.tasks)||!Array.isArray(raw.tx))return defaults();
- const next={...defaults(),...raw,version:3};
- if(!Array.isArray(next.goals))next.goals=[];
- if(!next.checks||typeof next.checks!=='object'||Array.isArray(next.checks))next.checks={};
- if(!Number.isInteger(next.focusIndex)||next.focusIndex<0)next.focusIndex=0;
- delete next.claimed;delete next.focus;
- next.xp=progress(next).xp;
- return next;
-}
-function load(){try{return normalize(JSON.parse(localStorage.getItem(KEY)))}catch(e){return defaults()}}
-let s=load();const $=id=>document.getElementById(id);const money=n=>Math.round(n).toLocaleString('ru-RU')+' ₸';
-function persist(){try{s.xp=progress(s).xp;localStorage.setItem(KEY,JSON.stringify(s));render()}catch(e){toast('Не удалось сохранить данные: память браузера заполнена')}}
 function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
+let toastTimer;
+function toast(msg){clearTimeout(toastTimer);$('toast').textContent=msg;$('toast').classList.add('show');toastTimer=setTimeout(()=>$('toast').classList.remove('show'),4000)}
 function lvl(){return Math.floor(s.xp/500)+1}function isDone(id){return s.checks[today()]?.[id]===true}
-function toggle(id,on){
- if(!s.tasks.some(t=>t.id===id))return;
- const wasDone=isDone(id);
- if(wasDone===on)return;
- if(on){s.checks[today()]??={};s.checks[today()][id]=true}
- else{delete s.checks[today()][id];if(Object.keys(s.checks[today()]).length===0)delete s.checks[today()]}
- persist();toast(on?'+20 XP':'−20 XP');
+async function toggle(id,on){
+ const date=today();
+ if(await persist(next=>{
+  if(!next.tasks.some(t=>t.id===id))throw new LifeResetData.DataError('conflict');
+  if((next.checks[date]?.[id]===true)===on)return false;
+  if(on){next.checks[date]??={};next.checks[date][id]=true}
+  else{delete next.checks[date][id];if(Object.keys(next.checks[date]).length===0)delete next.checks[date]}
+ }))toast(on?'+20 XP':'−20 XP');
 }
-function removeTask(id){
+async function removeTask(id){
+ const expectedRaw=snapshot.raw;
  const task=s.tasks.find(t=>t.id===id);
  if(!task)return;
  if(!confirm('Удалить привычку «'+task.name+'»? История её выполнений, опыт и прогресс характеристики за неё будут удалены. Это действие нельзя отменить.'))return;
- s.tasks=s.tasks.filter(t=>t.id!==id);
- for(const [date,day] of Object.entries(s.checks)){
-  if(!day||typeof day!=='object')continue;
-  delete day[id];
-  if(Object.keys(day).length===0)delete s.checks[date];
- }
- persist();
- toast('Привычка удалена');
+ if(await persist(next=>{
+  next.tasks=next.tasks.filter(t=>t.id!==id);
+  for(const [date,day] of Object.entries(next.checks)){
+   delete day[id];if(Object.keys(day).length===0)delete next.checks[date];
+  }
+ },{expectedRaw}))toast('Привычка удалена');
 }
 function render(){
+ $('dataWarning').hidden=!snapshot.error;
+ $('exportOriginal').disabled=snapshot.raw===null;
+ for(const [id,key] of [['exportBeforeUpgrade',UPGRADE_COPY],['exportBeforeImport',IMPORT_COPY]]){
+  try{$(id).hidden=localStorage.getItem(key)===null}catch(e){$(id).hidden=true}
+ }
  $('today').textContent=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
- $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=FOCUS_TIPS[s.focusIndex%FOCUS_TIPS.length];
+ $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=s.focus||FOCUS_TIPS[s.focusIndex%FOCUS_TIPS.length];
  const {counts}=progress(s);
  $('stats').innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="stat"><small>${n}</small><b>LVL ${1+Math.floor(counts[k]/10)}</b><small>${counts[k]} заданий выполнено</small></div>`).join('');
  const done=s.tasks.filter(t=>isDone(t.id)).length;$('progress').textContent=`${done} / ${s.tasks.length}`;$('daybar').style.width=(s.tasks.length?done/s.tasks.length*100:0)+'%';
@@ -144,7 +154,7 @@ function render(){
  document.querySelectorAll('[data-task]').forEach(el=>el.addEventListener('change',()=>toggle(el.dataset.task,el.checked)));
  document.querySelectorAll('[data-delete-task]').forEach(el=>el.addEventListener('click',()=>removeTask(el.dataset.deleteTask)));
  $('goalList').innerHTML=s.goals.map((g,i)=>`<div class="goal row"><span>${esc(g)}</span><button class="secondary" data-goal="${i}">Удалить</button></div>`).join('')||'<div class="empty">Добавь цель, к которой хочешь двигаться.</div>';
- document.querySelectorAll('[data-goal]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту цель?')){s.goals.splice(+b.dataset.goal,1);persist()}});
+ document.querySelectorAll('[data-goal]').forEach(b=>b.onclick=async()=>{const expectedRaw=snapshot.raw;if(confirm('Удалить эту цель?')&&await persist(next=>{next.goals.splice(+b.dataset.goal,1)},{expectedRaw}))toast('Цель удалена')});
  const inc=s.tx.filter(t=>t.kind==='income').reduce((a,t)=>a+t.amount,0),out=s.tx.filter(t=>t.kind!=='income').reduce((a,t)=>a+t.amount,0);
  $('balance').textContent=money(inc-out);$('income').textContent=money(inc);$('outgo').textContent=money(out);$('txCount').textContent=s.tx.length;
  $('transactions').innerHTML=s.tx.slice().reverse().map(t=>`<div class="tx row"><span>${esc(t.note||({income:'Доход',expense:'Расход',debt:'Погашение долга'}[t.kind]))}<small><br>${esc(t.date)} · ${{income:'Доход',expense:'Расход',debt:'Долг'}[t.kind]}</small></span><b>${t.kind==='income'?'+':'−'}${money(t.amount)}</b></div>`).join('')||'<div class="empty">Операций пока нет.</div>';
@@ -154,15 +164,67 @@ function render(){
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b))});
 $('addTask').onclick=()=>{$('taskForm').reset();$('taskName').value='';$('taskCategory').value='discipline';$('taskDialog').showModal();$('taskName').focus()};
 $('cancelTask').onclick=()=>$('taskDialog').close();
-$('taskForm').onsubmit=e=>{e.preventDefault();const name=$('taskName').value.trim();const cat=$('taskCategory').value;if(!name)return toast('Введи название задания');if(!CATS[cat])return toast('Выбери категорию');s.tasks.push({id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,cat});$('taskDialog').close();persist();toast('Привычка добавлена')};
-$('addGoal').onclick=()=>{const g=prompt('Название цели');if(g?.trim()){s.goals.push(g.trim());persist()}};
-$('nextFocus').onclick=()=>{s.focusIndex=(s.focusIndex+1)%FOCUS_TIPS.length;persist()};
-$('saveTx').onclick=()=>{const amount=Number($('amount').value);if(!Number.isFinite(amount)||amount<=0)return toast('Укажи корректную сумму');s.tx.push({id:'tx'+Date.now(),kind:$('kind').value,amount,note:$('note').value.trim(),date:today()});$('amount').value='';$('note').value='';persist();toast('Операция сохранена')};
-$('export').onclick=()=>{s.backupAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(s));const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='life-reset-backup-'+today()+'.json';a.click();URL.revokeObjectURL(url);render();toast('Резервная копия создана')};
+$('taskForm').onsubmit=async e=>{
+ e.preventDefault();const button=e.submitter||$('taskForm').querySelector('[type="submit"]');if(button.disabled)return;
+ const name=$('taskName').value.trim(),cat=$('taskCategory').value;
+ if(!name)return toast('Введи название задания');if(!Object.hasOwn(CATS,cat))return toast('Выбери категорию');
+ button.disabled=true;
+ try{if(await persist(next=>{next.tasks.push({id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,cat})})){$('taskDialog').close();toast('Привычка добавлена')}}finally{button.disabled=false}
+};
+let goalDraft='';
+$('addGoal').onclick=async()=>{
+ const g=prompt('Название цели',goalDraft);if(g===null)return;goalDraft=g;
+ if(g.trim()&&await persist(next=>{next.goals.push(g.trim())})){goalDraft='';toast('Цель добавлена')}
+};
+$('nextFocus').onclick=()=>persist(next=>{delete next.focus;next.focusIndex=(next.focusIndex+1)%FOCUS_TIPS.length});
+$('saveTx').onclick=async()=>{
+ const button=$('saveTx');if(button.disabled)return;
+ const amount=Number($('amount').value),note=$('note').value.trim(),kind=$('kind').value,date=today();
+ if(!Number.isFinite(amount)||amount<=0||amount>Number.MAX_SAFE_INTEGER)return toast('Укажи корректную сумму');
+ button.disabled=true;
+ try{if(await persist(next=>{next.tx.push({id:'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),kind,amount,note,date})})){$('amount').value='';$('note').value='';toast('Операция сохранена')}}finally{button.disabled=false}
+};
+function downloadRaw(raw,label){
+ if(raw===null)return toast('Сохранённая запись недоступна');
+ const blob=new Blob([raw],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='life-reset-'+label+'-'+today()+'.json';document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),60000);toast('Файл резервной копии подготовлен');
+}
+function exportKey(key,label){try{downloadRaw(localStorage.getItem(key),label)}catch(e){toast('Не удалось прочитать сохранённую запись')}}
+$('exportOriginal').onclick=()=>exportKey(KEY,'recovery');
+$('exportBeforeUpgrade').onclick=()=>exportKey(UPGRADE_COPY,'before-upgrade');
+$('exportBeforeImport').onclick=()=>exportKey(IMPORT_COPY,'before-import');
+$('export').onclick=()=>{
+ const current=store.read();
+ downloadRaw(current.raw===null&&!current.error?JSON.stringify(current.data,null,2):current.raw,current.error?'recovery':'backup');
+ // Download stays available even when storage is full; metadata is optional.
+ if(!current.error)persist(next=>{next.backupAt=new Date().toISOString()},{expectedRaw:current.raw});
+};
 $('importBtn').onclick=()=>$('importFile').click();
-$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(![2,3].includes(x.version)||!Array.isArray(x.tasks)||!Array.isArray(x.tx))throw Error();if(!confirm('Заменить текущие данные импортированной копией?'))return;s=normalize(x);persist();toast('Данные восстановлены')}catch(err){toast('Файл не распознан как резервная копия Life Reset')}e.target.value=''};
-$('resetChecks').onclick=()=>{if(confirm('Сбросить сегодняшние отметки? Опыт за снятые отметки и прогресс характеристик тоже уменьшатся.')){delete s.checks[today()];persist();toast('Отметки и XP за сегодня сброшены')}};
-$('resetAll').onclick=()=>{if(confirm('Удалить ВСЕ данные приложения? Сначала экспортируй резервную копию.')){s=defaults();persist();toast('Данные удалены')}};
+$('importFile').onchange=async e=>{
+ const input=e.target,f=input.files[0];if(!f)return;
+ let readingFile=false;
+ try{
+  const {raw:expectedRaw,token:expectedToken}=await captureForReplacement();
+  readingFile=true;
+  if(f.size>5*1024*1024)throw Error();
+  const x=normalize(JSON.parse(await f.text()));
+  if(!confirm('Заменить текущие данные импортированной копией? Текущая запись будет сохранена отдельно.'))return;
+  if(await persist(()=>{}, {replacement:x,expectedRaw,expectedToken}))toast('Данные восстановлены');
+ }catch(err){toast(!readingFile||err.code==='conflict'||err.code==='stale'?errorMessage(err):'Файл не распознан как исправная резервная копия Life Reset. Данные не изменены.')}
+ finally{input.value=''}
+};
+$('resetChecks').onclick=async()=>{const expectedRaw=snapshot.raw,date=today();if(confirm('Сбросить сегодняшние отметки? Опыт за снятые отметки и прогресс характеристик тоже уменьшатся.')&&await persist(next=>{delete next.checks[date]},{expectedRaw}))toast('Отметки и XP за сегодня сброшены')};
+$('resetAll').onclick=async()=>{
+ let captured;try{captured=await captureForReplacement(true)}catch(error){toast(errorMessage(error));return}
+ const {raw:expectedRaw,token:expectedToken}=captured;
+ if(confirm('Удалить ВСЕ данные приложения, включая локальные резервные копии? Сначала экспортируй резервную копию.')){
+  if(await persist(()=>{}, {replacement:defaults(),expectedRaw,expectedToken,discardCopies:true}))toast('Данные удалены');
+ }
+};
+window.addEventListener('storage',e=>{if(e.key===KEY||e.key===null)refresh()});
+window.addEventListener('pageshow',refresh);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 render();
 if('serviceWorker'in navigator && location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
