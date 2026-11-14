@@ -246,6 +246,10 @@ test('human SVG keeps its nodes while proportions transition between ranks',asyn
  assert.equal(await page.evaluate(()=>originalHuman===document.querySelector('.human-avatar')&&originalTorso===document.querySelector('.avatar-torso')),true);
  assert.ok((await torso.evaluate(el=>getComputedStyle(el).transitionProperty)).includes('transform'));
  for(const width of [320,375,390,430]){await page.setViewportSize({width,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
+ for(const height of [568,664,844]){
+  await page.setViewportSize({width:390,height});const scene=await page.locator('.game-avatar__scene').boundingBox(),figure=await page.locator('.game-avatar__figure').boundingBox();
+  assert.ok(figure.y>=scene.y&&figure.y+figure.height<=scene.y+scene.height,'Full character fits short phone screens');
+ }
 });
 test('demo honors reduced motion while still announcing level ups',async t=>{
  const {page}=await open(t,{reducedMotion:'reduce'});await page.goto(base+'avatar-demo.html');await page.locator('[data-rank="2"]').click();
