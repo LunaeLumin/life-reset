@@ -1,0 +1,19 @@
+{
+  "version": "0.7.0",
+  "sourceCommit": "3c27c378ea02fce9e66d671a9e5a3d094316d376",
+  "sourceHashes": {
+    "index.html": "dadccb3af7a3cea8d09af8bfa9bcaaabb3a57651b23df8b1ef203f6328d0d7e4",
+    "data.js": "86b190bdeb21525a558fc1ee46bcf5c6f566533d82b90a951de9952a253eb8dd",
+    "progression.js": "359d17b350ba666107d9f87e5e310b032dd93b9f33e40fc730d77998d5e24899",
+    "avatar.css": "249a80b363dc4e1369c678fea91a1bc64e517f4438676299a3c76b73a641694f",
+    "avatar-component.js": "ee4d8dee0846f4f9903e736ab6d8e7a4eecadda7a601e910241edfaa33683fb1",
+    "avatar-demo.html": "ab3ad34a2b4fdbbf8fdd5e8b6508373c7620abe7846ec9f4cc07b2a777f645de",
+    "history.css": "0df9134c36df920cfdc129da96cb598c6f2c780bdf67bbbfa3895c7355728cfe",
+    "history.js": "795e18cd451cc3936ec39a38889a34469968ce8ea47b4377766db2ea31af43ec",
+    "sw.js": "35f2e9cd623c3f5e1395e5bb435dd04f22dc221a72d5ba9267f9cec601545f34",
+    "manifest.webmanifest": "6adcb3547e5f2dac8627cdd30e09423d8ef32b9f22db919c0e3c043bbeb2e653",
+    "icon.svg": "9f9ef81570097985c4101ce33ea072dd621bf89fa9b60d51748eca732b9a213a"
+  },
+  "storageKey": "lr-preview-0.7.0",
+  "cachePrefix": "lr-preview-0.7.0-"
+}
