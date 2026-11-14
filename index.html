@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#101114"><meta name="description" content="Life Reset — личная операционная система">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="avatar.css">
+<link rel="stylesheet" href="history.css">
 <title>Life Reset</title>
 <style>
 :root{color-scheme:dark;--bg:#101114;--panel:#191b20;--panel2:#22252c;--text:#f4f5f7;--muted:#9298a3;--line:#2b2f38;--accent:#d9f36a;--red:#ff8c8c}
@@ -21,7 +22,7 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 </style>
 </head>
 <body>
-<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.6.0</span></header>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.7.0</span></header>
 <main>
 <div id="dataWarning" class="card" role="alert" hidden><p>Не удалось прочитать сохранённые данные. Исходная запись сохранена без изменений. Скачай её для восстановления или импортируй исправную копию в разделе «Ещё».</p><button id="exportOriginal" class="secondary">Скачать исходную запись</button></div>
 <section id="dashboard" class="view active">
@@ -31,7 +32,9 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
  <div class="card"><div class="eyebrow">Фокус дня</div><p id="focusText">Стабильность важнее идеального дня.</p><button class="secondary" id="nextFocus">Другой совет</button></div>
 </section>
 <section id="habits" class="view">
- <div class="card"><div class="section-head"><h2>Привычки и задания</h2><button id="addTask" class="secondary">＋ Добавить</button></div><div id="habitList"></div><p class="hint">За отмеченное задание начисляется 20 XP. Если снять галочку, 20 XP и прогресс характеристики отменяются. Повторное выполнение в этот же день не удваивает опыт.</p></div>
+ <div class="habit-view-switch" role="group" aria-label="Раздел привычек"><button type="button" data-habit-view="list" aria-pressed="true" aria-controls="habitManager">Привычки</button><button type="button" data-habit-view="history" aria-pressed="false" aria-controls="habitHistory">История</button></div>
+ <div class="card" id="habitManager"><div class="section-head"><h2>Привычки и задания</h2><button id="addTask" class="secondary">＋ Добавить</button></div><div id="habitList"></div><p class="hint">За отмеченное задание начисляется 20 XP. Если снять галочку, 20 XP и прогресс характеристики отменяются. Повторное выполнение в этот же день не удваивает опыт.</p></div>
+ <div class="card" id="habitHistory" hidden></div>
 </section>
 <section id="goals" class="view">
  <div class="card"><div class="section-head"><h2>Цели</h2><button id="addGoal" class="secondary">＋ Добавить</button></div><div id="goalList"></div></div>
@@ -74,6 +77,7 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 <script src="data.js"></script>
 <script src="progression.js"></script>
 <script src="avatar-component.js"></script>
+<script src="history.js"></script>
 <script>
 const {KEY,CATS,UPGRADE_COPY,IMPORT_COPY,defaults,progress,normalize,Store}=LifeResetData;
 const {STAGES,appearance,avatarMarkup}=LifeResetProgression;
@@ -104,7 +108,13 @@ const store=new Store();
 let snapshot=store.read(),s=snapshot.data;
 const $=id=>document.getElementById(id);const money=n=>Math.round(n).toLocaleString('ru-RU')+' ₸';
 const avatarDetail=LifeResetAvatar.mount($('avatarDetail'),{xp:s.xp,demo:false});
-function refresh(){snapshot=store.read();s=snapshot.data;render()}
+const historyCalendar=LifeResetHistory.mount($('habitHistory'),{getToday:today});
+let dayTimer;
+function scheduleDayRefresh(){
+ clearTimeout(dayTimer);const now=new Date(),next=new Date(now);next.setHours(24,0,0,50);
+ dayTimer=setTimeout(refresh,Math.max(50,next.getTime()-now.getTime()));
+}
+function refresh(){snapshot=store.read();s=snapshot.data;render();scheduleDayRefresh()}
 function errorMessage(error){
  if(error.code==='conflict'||error.code==='stale')return 'Данные изменились в другом окне. Проверь их и повтори действие.';
  if(error.code==='invalid'||error instanceof SyntaxError)return 'Данные не прошли проверку. Сохранённая запись не изменена.';
@@ -203,8 +213,13 @@ function render(){
  document.querySelectorAll('[data-delete-tx]').forEach(button=>button.onclick=()=>removeTransaction(+button.dataset.deleteTx));
  $('totalXp').textContent=s.xp+' XP';$('analyticsText').textContent=`Текущий уровень: ${lvl()}. Сегодня: ${done} из ${s.tasks.length} заданий. Всего целей: ${s.goals.length}. Финансовых операций: ${s.tx.length}. Баланс внесённых операций: ${money(inc-out)}.`;
  $('backupDate').textContent=s.backupAt?'Последний экспорт: '+new Date(s.backupAt).toLocaleString('ru-RU'):'Резервная копия ещё не создавалась.';
+ historyCalendar.update(s);
 }
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b))});
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));historyCalendar.show()});
+document.querySelectorAll('[data-habit-view]').forEach(button=>button.onclick=()=>{
+ const history=button.dataset.habitView==='history';$('habitManager').hidden=history;$('habitHistory').hidden=!history;
+ document.querySelectorAll('[data-habit-view]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));historyCalendar.show();
+});
 $('avatarButton').onclick=()=>$('stageDialog').showModal();
 $('closeStageDialog').onclick=()=>$('stageDialog').close();
 $('addTask').onclick=()=>{$('taskForm').reset();$('taskName').value='';$('taskCategory').value='discipline';$('taskDialog').showModal();$('taskName').focus()};
@@ -271,6 +286,7 @@ window.addEventListener('storage',e=>{if(e.key===KEY||e.key===null)refresh()});
 window.addEventListener('pageshow',refresh);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 render();
+scheduleDayRefresh();
 if('serviceWorker'in navigator && location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body></html>

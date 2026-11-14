@@ -1,5 +1,5 @@
-const CACHE='life-reset-v0.6.0';
-const FILES=['./','./index.html','./data.js','./progression.js','./avatar.css','./avatar-component.js','./avatar-demo.html','./manifest.webmanifest','./icon.svg'];
+const CACHE='life-reset-v0.7.0';
+const FILES=['./','./index.html','./data.js','./progression.js','./avatar.css','./avatar-component.js','./avatar-demo.html','./history.css','./history.js','./manifest.webmanifest','./icon.svg'];
 function fetchWithDeadline(request){
  const controller=new AbortController();let timer;
  const deadline=new Promise((resolve,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('Network timeout'))},2500)});
