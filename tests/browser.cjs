@@ -9,26 +9,26 @@ const {execFileSync}=require('node:child_process');
 const {KEY,UPGRADE_COPY,IMPORT_COPY,defaults}=require('../data.js');
 const {buildPreview,PREVIEW_KEY,CACHE_PREFIX,VERSION,PREVIEW_PATH,FILES}=require('../scripts/build-preview.cjs');
 const root=path.resolve(__dirname,'..');
-const oldRef='5d958710c340e3e8e7503cc8345c59899b3b0cad';
-let browser,server,base,temp,serveOld=false;
+const oldRef='013f57cfd050a5bbf5d936ab44fda74fb5180d93';
+let browser,server,base,temp,serveOld=false,stallNetwork=false;
 before(async()=>{
  temp=fs.mkdtempSync(path.join(os.tmpdir(),'life-reset-tests-'));
  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(temp,'key.pem'),'-out',path.join(temp,'cert.pem'),'-days','1','-subj','/CN=localhost'],{stdio:'ignore'});
- const oldHtml=execFileSync('git',['show',oldRef+':index.html'],{cwd:root});
- const oldSw=execFileSync('git',['show',oldRef+':sw.js'],{cwd:root});
+ const oldFiles=Object.fromEntries(['index.html','data.js','progression.js','sw.js','manifest.webmanifest','icon.svg'].map(name=>[name,execFileSync('git',['show',oldRef+':'+name],{cwd:root})]));
  buildPreview(root,path.join(temp,'preview'),execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim());
  server=https.createServer({key:fs.readFileSync(path.join(temp,'key.pem')),cert:fs.readFileSync(path.join(temp,'cert.pem'))},(req,res)=>{
+  if(stallNetwork)return;
   const urlPath=new URL(req.url,'https://localhost').pathname,isPreview=urlPath.startsWith(PREVIEW_PATH);
   const filename=urlPath.slice(isPreview?PREVIEW_PATH.length:'/life-reset/'.length)||'index.html';
   if(!FILES.includes(filename)){res.writeHead(404);return res.end()}
-  const body=isPreview?fs.readFileSync(path.join(temp,'preview',filename)):serveOld&&filename==='index.html'?oldHtml:serveOld&&filename==='sw.js'?oldSw:fs.readFileSync(path.join(root,filename));
-  const type=filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':filename.endsWith('.webmanifest')?'application/manifest+json':'text/html';
+  const body=isPreview?fs.readFileSync(path.join(temp,'preview',filename)):serveOld&&oldFiles[filename]?oldFiles[filename]:fs.readFileSync(path.join(root,filename));
+  const type=filename.endsWith('.js')?'text/javascript':filename.endsWith('.css')?'text/css':filename.endsWith('.svg')?'image/svg+xml':filename.endsWith('.webmanifest')?'application/manifest+json':'text/html';
   res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});res.end(body);
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));base=`https://127.0.0.1:${server.address().port}/life-reset/`;
  browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH}:{}),args:['--ignore-certificate-errors']});
 });
-after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));if(temp)fs.rmSync(temp,{recursive:true,force:true})});
+after(async()=>{await browser?.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve))}if(temp)fs.rmSync(temp,{recursive:true,force:true})});
 async function open(t,{raw,fallback=false,serviceWorkers='block',reducedMotion}={}){
  const context=await browser.newContext({...devices['iPhone 13'],timezoneId:'Asia/Qyzylorda',ignoreHTTPSErrors:true,serviceWorkers,...(reducedMotion?{reducedMotion}:{})});
  t.after(()=>context.close());
@@ -125,7 +125,7 @@ test('legacy upgrade keeps XP and focus and exposes its exact source copy',async
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),UPGRADE_COPY),raw);assert.equal(JSON.parse(await saved(page)).xp,120);
  await page.locator('[data-tab="analytics"]').click();assert.equal(await page.locator('#exportBeforeUpgrade').isVisible(),true);
 });
-test('v0.4.1 service worker updates to current version and all scripts load offline with old data',async t=>{
+test('v0.5.0 service worker updates to current version and all assets load offline with old data',async t=>{
  serveOld=true;t.after(()=>{serveOld=false});
  const {page,context,errors}=await open(t,{serviceWorkers:'allow'});
  await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
@@ -139,7 +139,7 @@ test('v0.4.1 service worker updates to current version and all scripts load offl
   return reg.active?.state==='activated'&&navigator.serviceWorker.controller!==window.previousController&&navigator.serviceWorker.controller===reg.active;
  });
  await page.waitForFunction(async cache=>{
-  const c=await caches.open(cache),files=['./','./index.html','./data.js','./progression.js','./manifest.webmanifest','./icon.svg'];
+  const c=await caches.open(cache),files=['./','./index.html','./data.js','./progression.js','./avatar.css','./avatar-component.js','./avatar-demo.html','./manifest.webmanifest','./icon.svg'];
   return (await Promise.all(files.map(file=>c.match(file)))).every(Boolean);
  },'life-reset-v'+VERSION);
  await page.reload();await page.waitForFunction(version=>document.querySelector('header .eyebrow').textContent.includes(version),VERSION);
@@ -147,7 +147,7 @@ test('v0.4.1 service worker updates to current version and all scripts load offl
  await context.setOffline(true);await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
  await page.locator('#tasks [data-task="move"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='40 XP');await page.reload();assert.equal(await page.locator('#xp').textContent(),'40 XP');assert.deepEqual(errors,[]);
 });
-test('preview and installed v0.4.1 share an origin without sharing data or offline caches',async t=>{
+test('preview and installed v0.5.0 share an origin without sharing data or offline caches',async t=>{
  serveOld=true;t.after(()=>{serveOld=false});
  const original={...defaults(),checks:{'2026-11-14':{walk:true}},xp:20,goals:['Основная цель'],tx:[{id:'original',kind:'income',amount:2500,date:'2026-11-14'}]};
  const raw=JSON.stringify(original),{page:production,context}=await open(t,{raw,serviceWorkers:'allow'});
@@ -162,7 +162,7 @@ test('preview and installed v0.4.1 share an origin without sharing data or offli
  await preview.locator('[data-tab="financeView"]').click();await preview.locator('#amount').fill('50');await preview.locator('#saveTx').click();await toast(preview,'Операция сохранена');
  assert.equal(await saved(production),raw);
  assert.equal(await preview.evaluate(key=>JSON.parse(localStorage.getItem(key)).tx.length,PREVIEW_KEY),2);
- const keys=await preview.evaluate(()=>caches.keys());assert.ok(keys.includes('life-reset-v4.1'));assert.ok(keys.includes(CACHE_PREFIX+'v1'));
+ const keys=await preview.evaluate(()=>caches.keys());assert.ok(keys.includes('life-reset-v0.5.0'));assert.ok(keys.includes(CACHE_PREFIX+'v1'));
  const registrations=await preview.evaluate(async()=>Promise.all((await navigator.serviceWorker.getRegistrations()).map(r=>r.scope)));
  assert.ok(registrations.includes(base));assert.ok(registrations.includes(new URL(PREVIEW_PATH,base).href));
  await context.setOffline(true);await preview.reload();assert.equal(await preview.locator('#previewNotice').isVisible(),true);assert.equal(await preview.locator('#xp').textContent(),'20 XP');
@@ -203,24 +203,55 @@ test('financial deletion rejects a changed snapshot while confirmation is open',
 });
 test('avatar path is read-only and the layout fits small iPhone screens at every stage',async t=>{
  const {page,errors}=await open(t);
- for(const [xp,index] of [[0,0],[1000,1],[2000,2],[4500,3],[9500,4]]){
+ for(const [xp,index] of [[0,0],[1000,1],[2500,2],[4500,3]]){
   const data={...defaults(),xp,legacyXp:xp},raw=JSON.stringify(data);await page.evaluate(({key,raw})=>localStorage.setItem(key,raw),{key:KEY,raw});await page.reload();
   assert.equal(await page.locator('#avatarButton').getAttribute('data-stage'),String(index));
   for(const width of [320,375,390,430]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
-  await page.locator('#avatarButton').click();assert.equal(await page.locator('#stageDialog').isVisible(),true);assert.equal(await page.locator('#stageList li').count(),5);assert.equal(await page.locator('#stageList [aria-current="step"]').count(),1);await page.locator('#closeStageDialog').click();assert.equal(await saved(page),raw);
+  await page.locator('#avatarButton').click();assert.equal(await page.locator('#stageDialog').isVisible(),true);assert.equal(await page.locator('#stageList li').count(),4);assert.equal(await page.locator('#stageList [aria-current="step"]').count(),1);assert.equal(await page.locator('#avatarDetail [data-add]').count(),0);await page.locator('#closeStageDialog').click();assert.equal(await saved(page),raw);
  }
  assert.deepEqual(errors,[]);
 });
 for(const reducedMotion of ['no-preference','reduce'])test(`earning a level changes the avatar and theme; unchecking restores them (${reducedMotion})`,async t=>{
  const data={...defaults(),xp:980,legacyXp:980},{page}=await open(t,{raw:JSON.stringify(data),reducedMotion});
  const initialColor=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent'));
- await page.locator('#tasks [data-task="walk"]').check();await toast(page,'Новый уровень — 3');assert.equal(await page.locator('#stageName').textContent(),'Ритм');assert.equal(await page.locator('#avatarButton').getAttribute('data-stage'),'1');
+ await page.locator('#tasks [data-task="walk"]').check();await toast(page,'Новый уровень — 3');assert.equal(await page.locator('#stageName').textContent(),'Любитель');assert.equal(await page.locator('#avatarButton').getAttribute('data-stage'),'1');
  assert.notEqual(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent')),initialColor);
  if(reducedMotion==='reduce')assert.equal(await page.locator('#avatarButton').evaluate(el=>getComputedStyle(el).animationName),'none');
- await page.reload();assert.equal(await page.locator('#stageName').textContent(),'Ритм');assert.equal(await page.locator('#toast').textContent(),'');
- await page.locator('#tasks [data-task="walk"]').uncheck();await page.waitForFunction(()=>document.getElementById('xp').textContent==='980 XP');assert.equal(await page.locator('#stageName').textContent(),'Искра');assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent')),initialColor);
+ await page.reload();assert.equal(await page.locator('#stageName').textContent(),'Любитель');assert.equal(await page.locator('#toast').textContent(),'');
+ await page.locator('#tasks [data-task="walk"]').uncheck();await page.waitForFunction(()=>document.getElementById('xp').textContent==='980 XP');assert.equal(await page.locator('#stageName').textContent(),'Новичок');assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent')),initialColor);
 });
 test('failed save at a level boundary does not unlock an avatar or show a celebration',async t=>{
  const data={...defaults(),xp:980,legacyXp:980},raw=JSON.stringify(data),{page}=await open(t,{raw});await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
- await page.locator('#tasks [data-task="walk"]').check();await toast(page,'Не удалось сохранить');assert.equal(await saved(page),raw);assert.equal(await page.locator('#stageName').textContent(),'Искра');assert.equal(await page.locator('#profileCard').getAttribute('class'),'card');
+ await page.locator('#tasks [data-task="walk"]').check();await toast(page,'Не удалось сохранить');assert.equal(await saved(page),raw);assert.equal(await page.locator('#stageName').textContent(),'Новичок');assert.equal(await page.locator('#profileCard').getAttribute('class'),'card');
+});
+test('demo XP controls, rank shortcuts and reset never change app data',async t=>{
+ const data={...defaults(),xp:980,legacyXp:980,goals:['Не менять']},raw=JSON.stringify(data),{page,errors}=await open(t,{raw});
+ await page.goto(base+'avatar-demo.html');assert.equal(await page.locator('.game-avatar__rank').textContent(),'Новичок');
+ await page.locator('[data-add="25"]').click();assert.equal(await page.locator('.game-avatar__bar').getAttribute('aria-valuenow'),'25');
+ await page.locator('[data-add="100"]').click();assert.equal(await page.evaluate(()=>demoAvatar.getXP()),125);
+ for(const [index,name] of [[1,'Любитель'],[2,'Атлет'],[3,'Титан']]){await page.locator('[data-rank="'+index+'"]').click();assert.equal(await page.locator('.game-avatar__rank').textContent(),name);assert.equal(await page.locator('.human-avatar').getAttribute('data-stage'),String(index));}
+ assert.equal(await page.locator('.game-avatar').evaluate(el=>el.classList.contains('is-level-up')),true);
+ await page.locator('[data-reset]').click();assert.equal(await page.evaluate(()=>demoAvatar.getXP()),0);assert.equal(await page.locator('.game-avatar__level').textContent(),'LVL 1');assert.equal(await page.locator('.game-avatar__bar').getAttribute('aria-valuenow'),'0');
+ assert.equal(await saved(page),raw);assert.deepEqual(errors,[]);
+});
+test('human SVG keeps its nodes while proportions transition between ranks',async t=>{
+ const {page}=await open(t);await page.goto(base+'avatar-demo.html');
+ await page.evaluate(()=>{window.originalHuman=document.querySelector('.human-avatar');window.originalTorso=document.querySelector('.avatar-torso')});
+ const torso=page.locator('.avatar-torso'),before=await torso.boundingBox();await page.locator('[data-rank="3"]').click();
+ await page.waitForFunction(()=>{const torso=document.querySelector('.avatar-torso');return getComputedStyle(torso).transform.startsWith('matrix(1.2,')});
+ const after=await torso.boundingBox();assert.ok(after.width>before.width*1.4);
+ assert.equal(await page.evaluate(()=>originalHuman===document.querySelector('.human-avatar')&&originalTorso===document.querySelector('.avatar-torso')),true);
+ assert.ok((await torso.evaluate(el=>getComputedStyle(el).transitionProperty)).includes('transform'));
+ for(const width of [320,375,390,430]){await page.setViewportSize({width,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
+});
+test('demo honors reduced motion while still announcing level ups',async t=>{
+ const {page}=await open(t,{reducedMotion:'reduce'});await page.goto(base+'avatar-demo.html');await page.locator('[data-rank="2"]').click();
+ assert.equal(await page.locator('.game-avatar__rank').textContent(),'Атлет');assert.equal(await page.locator('.avatar-torso').evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
+ assert.ok((await page.locator('.game-avatar__up').textContent()).includes('Уровень 6'));
+});
+test('cached app and demo load when network requests stall instead of rejecting',async t=>{
+ const {page,context}=await open(t,{serviceWorkers:'allow'});await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>navigator.serviceWorker.controller?.state==='activated');
+ stallNetwork=true;t.after(()=>{stallNetwork=false});
+ await page.reload({timeout:15000});assert.equal(await page.locator('#stageName').textContent(),'Новичок');
+ await context.setOffline(true);await page.goto(base+'avatar-demo.html');await page.locator('[data-add="100"]').click();assert.equal(await page.evaluate(()=>demoAvatar.getXP()),100);
 });

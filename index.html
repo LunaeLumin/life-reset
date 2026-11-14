@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101114"><meta name="description" content="Life Reset — личная операционная система">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="avatar.css">
 <title>Life Reset</title>
 <style>
 :root{color-scheme:dark;--bg:#101114;--panel:#191b20;--panel2:#22252c;--text:#f4f5f7;--muted:#9298a3;--line:#2b2f38;--accent:#d9f36a;--red:#ff8c8c}
@@ -20,11 +21,11 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 </style>
 </head>
 <body>
-<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.5.0</span></header>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.6.0</span></header>
 <main>
 <div id="dataWarning" class="card" role="alert" hidden><p>Не удалось прочитать сохранённые данные. Исходная запись сохранена без изменений. Скачай её для восстановления или импортируй исправную копию в разделе «Ещё».</p><button id="exportOriginal" class="secondary">Скачать исходную запись</button></div>
 <section id="dashboard" class="view active">
- <div class="card" id="profileCard"><div class="hero"><div class="profile-main"><button type="button" class="avatar-button" id="avatarButton" aria-label="Посмотреть этапы развития аватара" aria-haspopup="dialog"></button><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="profile-caption"><span class="pill" id="stageName">Искра</span><span class="hint" id="nextLook">Новый облик: LVL 3</span></div><div class="bar"><i id="xpbar"></i></div></div>
+ <div class="card" id="profileCard"><div class="hero"><div class="profile-main"><button type="button" class="avatar-button" id="avatarButton" aria-label="Посмотреть этапы развития аватара" aria-haspopup="dialog"></button><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="profile-caption"><span class="pill" id="stageName">Новичок</span><span class="hint" id="nextLook">Новый облик: LVL 3</span></div><div class="bar"><i id="xpbar"></i></div></div>
  <div class="card"><div class="section-head"><h2>Характеристики</h2><span class="eyebrow">ПРОГРЕСС</span></div><div class="stats" id="stats"></div></div>
  <div class="card"><div class="section-head"><h2>Задания на сегодня</h2><span class="eyebrow" id="progress">0 / 0</span></div><div id="tasks"></div><div class="bar"><i id="daybar"></i></div></div>
  <div class="card"><div class="eyebrow">Фокус дня</div><p id="focusText">Стабильность важнее идеального дня.</p><button class="secondary" id="nextFocus">Другой совет</button></div>
@@ -63,14 +64,16 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
  </form>
 </dialog>
 <dialog id="stageDialog" aria-labelledby="stageDialogTitle">
- <h2 id="stageDialogTitle">Твой путь</h2>
- <p class="hint">Аватар и цвет акцента меняются с ростом уровня. Каждый уровень — 500 XP.</p>
- <ol class="stage-list" id="stageList"></ol>
+ <h2 id="stageDialogTitle">Твой персонаж</h2>
+ <div id="avatarDetail"></div>
+ <details style="margin-top:18px"><summary class="hint" style="cursor:pointer">Этапы развития</summary><ol class="stage-list" id="stageList"></ol></details>
+ <p class="hint"><a href="avatar-demo.html" style="color:var(--accent)">Попробовать персонажа с тестовым XP →</a></p>
  <div class="dialog-actions"><button type="button" id="closeStageDialog">Понятно</button></div>
 </dialog>
 <nav class="nav"><div class="nav-inner"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="habits">Привычки</button><button data-tab="goals">Цели</button><button data-tab="financeView">Финансы</button><button data-tab="analytics">Ещё</button></div></nav><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="data.js"></script>
 <script src="progression.js"></script>
+<script src="avatar-component.js"></script>
 <script>
 const {KEY,CATS,UPGRADE_COPY,IMPORT_COPY,defaults,progress,normalize,Store}=LifeResetData;
 const {STAGES,appearance,avatarMarkup}=LifeResetProgression;
@@ -100,6 +103,7 @@ const today=()=>new Date().toLocaleDateString('sv-SE');
 const store=new Store();
 let snapshot=store.read(),s=snapshot.data;
 const $=id=>document.getElementById(id);const money=n=>Math.round(n).toLocaleString('ru-RU')+' ₸';
+const avatarDetail=LifeResetAvatar.mount($('avatarDetail'),{xp:s.xp,demo:false});
 function refresh(){snapshot=store.read();s=snapshot.data;render()}
 function errorMessage(error){
  if(error.code==='conflict'||error.code==='stale')return 'Данные изменились в другом окне. Проверь их и повтори действие.';
@@ -177,10 +181,12 @@ function render(){
  $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=s.focus||FOCUS_TIPS[s.focusIndex%FOCUS_TIPS.length];
  const visual=appearance(s.xp);
  document.documentElement.style.setProperty('--accent',visual.stage.color);
- $('avatarButton').innerHTML=avatarMarkup(visual.index);$('avatarButton').dataset.stage=visual.index;
+ const avatarSVG=$('avatarButton').querySelector('svg');
+ if(avatarSVG)avatarSVG.dataset.stage=visual.index;else $('avatarButton').innerHTML=avatarMarkup(visual.index,true);
+ $('avatarButton').dataset.stage=visual.index;avatarDetail.setXP(s.xp);
  $('avatarButton').setAttribute('aria-label','Аватар «'+visual.stage.name+'». Посмотреть этапы развития');
  $('stageName').textContent=visual.stage.name;$('nextLook').textContent=visual.next?'Новый облик: LVL '+visual.next.level:'Все облики открыты';
- $('stageList').innerHTML=STAGES.map((stage,index)=>`<li class="stage-row" ${index===visual.index?'aria-current="step"':''}><span class="stage-preview" style="color:${stage.color}">${avatarMarkup(index)}</span><span class="stage-meta"><b>${stage.name}</b><small>LVL ${stage.level} · ${((stage.level-1)*500).toLocaleString('ru-RU')} XP</small></span>${index===visual.index?'<span class="pill">Сейчас</span>':''}</li>`).join('');
+ $('stageList').innerHTML=STAGES.map((stage,index)=>`<li class="stage-row" ${index===visual.index?'aria-current="step"':''}><span class="stage-preview" style="color:${stage.color}">${avatarMarkup(index,true)}</span><span class="stage-meta"><b>${stage.name}</b><small>LVL ${stage.level} · ${((stage.level-1)*500).toLocaleString('ru-RU')} XP</small></span>${index===visual.index?'<span class="pill">Сейчас</span>':''}</li>`).join('');
  const {counts}=progress(s);
  $('stats').innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="stat"><small>${n}</small><b>LVL ${1+Math.floor(counts[k]/10)}</b><small>${counts[k]} заданий выполнено</small></div>`).join('');
  const done=s.tasks.filter(t=>isDone(t.id)).length;$('progress').textContent=`${done} / ${s.tasks.length}`;$('daybar').style.width=(s.tasks.length?done/s.tasks.length*100:0)+'%';
