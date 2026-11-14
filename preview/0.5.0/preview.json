@@ -1,0 +1,14 @@
+{
+  "version": "0.5.0",
+  "sourceCommit": "b675893e035674dad347c46baf1c5bece03bc60a",
+  "sourceHashes": {
+    "index.html": "61366ab9df329e3447c34f7dd6ab9c6d1fc556ac49ba6245f11b5f0a2de83bc6",
+    "data.js": "86b190bdeb21525a558fc1ee46bcf5c6f566533d82b90a951de9952a253eb8dd",
+    "progression.js": "992a320ebd002d44acfc5e0857630f3a4bbdbb7fc62aab6f2cfb231cce3d37d0",
+    "sw.js": "4520f3c3114771b965b58451b80493b07fb1801823b076e33413a0903f55ccf1",
+    "manifest.webmanifest": "6adcb3547e5f2dac8627cdd30e09423d8ef32b9f22db919c0e3c043bbeb2e653",
+    "icon.svg": "9f9ef81570097985c4101ce33ea072dd621bf89fa9b60d51748eca732b9a213a"
+  },
+  "storageKey": "lr-preview-0.5.0",
+  "cachePrefix": "lr-preview-0.5.0-"
+}
