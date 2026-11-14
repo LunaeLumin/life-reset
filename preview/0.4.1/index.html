@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101114"><meta name="description" content="Life Reset — личная операционная система">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Life Reset — Тест 0.4.1</title>
+<style>
+:root{color-scheme:dark;--bg:#101114;--panel:#191b20;--panel2:#22252c;--text:#f4f5f7;--muted:#9298a3;--line:#2b2f38;--accent:#d9f36a;--red:#ff8c8c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px calc(92px + env(safe-area-inset-bottom));max-width:760px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;padding:22px 2px 18px}h1{font-size:19px;letter-spacing:.13em;margin:0}.date{font-size:12px;color:var(--muted)}small,.muted{color:var(--muted)}main{display:grid;gap:14px}.view{display:none}.view.active{display:grid;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}.hero,.row,.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.hero{align-items:flex-start}.section-head{margin-bottom:12px}h2{font-size:16px;margin:0}.level{font-size:30px;font-weight:700;margin-top:5px}.xp{font-size:12px;color:var(--muted);text-align:right}.bar{height:7px;border-radius:8px;background:var(--panel2);overflow:hidden;margin-top:14px}.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.stat{background:var(--panel2);border-radius:13px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.task{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--line)}.task:first-of-type{border-top:0}.task input{appearance:none;width:21px;height:21px;border:1px solid #626976;border-radius:7px;flex:none}.task input:checked{background:var(--accent);border-color:var(--accent)}.task input:checked:after{content:"✓";display:block;color:#111;font-weight:800;text-align:center;line-height:19px}.task.done span{text-decoration:line-through;color:var(--muted)}.habit-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}.habit-row .task{flex:1;min-width:0;border-top:0}.habit-row .task span{overflow-wrap:anywhere}.delete-habit{flex:none;background:transparent;color:#f5a8a8;border:1px solid #8d4c4c;padding:8px 10px;font-size:12px}.delete-habit:hover{background:#4c2525}
+button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;padding:11px 14px;font-weight:650;font-size:13px;cursor:pointer}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.danger{background:#3a2226;color:#ffb0b0;border:1px solid #684047}.nav{position:fixed;bottom:0;left:0;right:0;background:#14161bed;border-top:1px solid var(--line);display:flex;justify-content:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(16px);z-index:4}.nav-inner{display:flex;max-width:760px;width:100%;justify-content:space-around}.nav button{background:transparent;color:var(--muted);padding:8px 7px;font-weight:500}.nav button.active{color:var(--accent)}.field{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;margin:7px 0 12px;font:inherit}.goal,.tx{padding:12px 0;border-top:1px solid var(--line)}.goal:first-child,.tx:first-child{border:0}.hint{font-size:12px;color:var(--muted);line-height:1.5}.empty{color:var(--muted);font-size:13px;padding:12px 0}.pill{font-size:11px;padding:4px 8px;border-radius:99px;background:var(--panel2);color:var(--muted)}.split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{font-size:23px;font-weight:700;margin:6px 0}.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#e8f4b0;color:#15170f;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:10}.toast.show{opacity:1}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:20px;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 40px)}dialog::backdrop{background:#000b;backdrop-filter:blur(5px)}dialog h2{margin-bottom:15px}dialog .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}dialog form{margin:0}dialog label{display:block}
+@media(min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">ТЕСТ · 0.4.1</span></header>
+<main>
+<div class="card hint" id="previewNotice" role="note">Тестовая версия 0.4.1. Данные здесь хранятся отдельно от основного Life Reset. Для проверки можно импортировать резервную копию. Изменения в тесте не переносятся в основное приложение.</div>
+<div id="dataWarning" class="card" role="alert" hidden><p>Не удалось прочитать сохранённые данные. Исходная запись сохранена без изменений. Скачай её для восстановления или импортируй исправную копию в разделе «Ещё».</p><button id="exportOriginal" class="secondary">Скачать исходную запись</button></div>
+<section id="dashboard" class="view active">
+ <div class="card"><div class="hero"><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="bar"><i id="xpbar"></i></div></div>
+ <div class="card"><div class="section-head"><h2>Характеристики</h2><span class="eyebrow">ПРОГРЕСС</span></div><div class="stats" id="stats"></div></div>
+ <div class="card"><div class="section-head"><h2>Задания на сегодня</h2><span class="eyebrow" id="progress">0 / 0</span></div><div id="tasks"></div><div class="bar"><i id="daybar"></i></div></div>
+ <div class="card"><div class="eyebrow">Фокус дня</div><p id="focusText">Стабильность важнее идеального дня.</p><button class="secondary" id="nextFocus">Другой совет</button></div>
+</section>
+<section id="habits" class="view">
+ <div class="card"><div class="section-head"><h2>Привычки и задания</h2><button id="addTask" class="secondary">＋ Добавить</button></div><div id="habitList"></div><p class="hint">За отмеченное задание начисляется 20 XP. Если снять галочку, 20 XP и прогресс характеристики отменяются. Повторное выполнение в этот же день не удваивает опыт.</p></div>
+</section>
+<section id="goals" class="view">
+ <div class="card"><div class="section-head"><h2>Цели</h2><button id="addGoal" class="secondary">＋ Добавить</button></div><div id="goalList"></div></div>
+</section>
+<section id="financeView" class="view">
+ <div class="card"><div class="eyebrow">Чистый баланс операций</div><div class="level" id="balance">0 ₸</div><div class="split"><div><small>Доходы</small><div class="metric" id="income">0 ₸</div></div><div><small>Расходы и долги</small><div class="metric" id="outgo">0 ₸</div></div></div></div>
+ <div class="card"><h2>Новая операция</h2><label class="hint">Тип операции</label><select class="field" id="kind"><option value="income">Доход</option><option value="expense">Расход</option><option value="debt">Погашение долга</option></select><label class="hint">Сумма, ₸</label><input class="field" id="amount" type="number" min="1" inputmode="decimal" placeholder="Например, 5000"><label class="hint">Комментарий</label><input class="field" id="note" placeholder="Зарплата, продукты..."><button id="saveTx">Сохранить операцию</button></div>
+ <div class="card"><div class="section-head"><h2>История операций</h2><span class="pill" id="txCount">0</span></div><div id="transactions"></div></div>
+</section>
+<section id="analytics" class="view">
+ <div class="card"><div class="eyebrow">Всего заработано</div><div class="level" id="totalXp">0 XP</div><small class="muted">Опыт за выполненные задания сохраняется между днями</small></div>
+ <div class="card"><h2>Сводка</h2><div id="analyticsText" class="hint"></div></div>
+ <div class="card"><h2>Данные приложения</h2><p class="hint">Экспортируй резервную копию перед очисткой браузера или переносом на другое устройство.</p><div class="actions"><button id="export">Экспорт данных</button><button id="importBtn" class="secondary">Импорт копии</button><input id="importFile" type="file" accept="application/json,.json" hidden></div><p class="hint" id="backupDate">Резервная копия ещё не создавалась.</p><div class="actions"><button id="exportBeforeUpgrade" class="secondary" hidden>Копия до обновления</button><button id="exportBeforeImport" class="secondary" hidden>Копия до импорта</button></div></div>
+ <div class="card"><h2>Управление</h2><div class="actions"><button id="resetChecks" class="secondary">Сбросить отметки сегодня</button><button id="resetAll" class="danger">Удалить все данные</button></div></div>
+</section>
+</main>
+<dialog id="taskDialog" aria-labelledby="taskDialogTitle">
+ <form id="taskForm">
+  <h2 id="taskDialogTitle">Новая привычка</h2>
+  <label for="taskName" class="hint">Название задания</label>
+  <input class="field" id="taskName" type="text" maxlength="100" placeholder="Например, 10 минут прогулки" required autocomplete="off">
+  <label for="taskCategory" class="hint">Категория</label>
+  <select class="field" id="taskCategory" required>
+   <option value="health">Здоровье</option>
+   <option value="discipline" selected>Дисциплина</option>
+   <option value="growth">Развитие</option>
+   <option value="finance">Финансы</option>
+  </select>
+  <div class="dialog-actions"><button type="button" class="secondary" id="cancelTask">Отмена</button><button type="submit">Добавить привычку</button></div>
+ </form>
+</dialog>
+<nav class="nav"><div class="nav-inner"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="habits">Привычки</button><button data-tab="goals">Цели</button><button data-tab="financeView">Финансы</button><button data-tab="analytics">Ещё</button></div></nav><div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="data.js"></script>
+<script>
+const {KEY,CATS,UPGRADE_COPY,IMPORT_COPY,defaults,progress,normalize,Store}=LifeResetData;
+const FOCUS_TIPS=[
+ 'Стабильность важнее идеального дня.',
+ 'Если сил мало, сделай всего 5 минут. Это тоже движение вперёд.',
+ 'Одна завершённая маленькая задача полезнее десяти идеальных планов.',
+ 'Отложи телефон на 15 минут и начни с самого простого действия.',
+ 'Не сравнивай свой сегодняшний темп с чужими результатами.',
+ 'Выбирай привычки, которые реально выполнить даже после трудного дня.',
+ 'Не обязательно ждать мотивации. Начни с минимального шага.',
+ 'Прогулка после работы — уже вклад в здоровье.',
+ 'Записывай расходы в момент покупки, пока не забыл.',
+ 'Сон и восстановление — часть прогресса, а не награда за него.',
+ 'Сегодня достаточно одного действия, которое улучшит завтрашний день.',
+ 'Оцени усилие, а не только конечный результат.',
+ 'Если привычка слишком сложная, уменьши её до выполнимого минимума.',
+ 'Сначала выполни важное, потом оцени, сколько осталось энергии.',
+ '15 минут практики полезнее часа бесконечной подготовки.',
+ 'Финансовая дисциплина начинается с понимания, куда уходят деньги.',
+ 'Не нужно наверстывать всё за один вечер.',
+ 'Сделай перерыв без экрана и посмотри, станет ли легче сосредоточиться.',
+ 'Выбирай три главных дела на день, а не бесконечный список.',
+ 'Каждый небольшой шаг — это реальное действие, а не обещание себе.'
+];
+const today=()=>new Date().toLocaleDateString('sv-SE');
+const store=new Store();
+let snapshot=store.read(),s=snapshot.data;
+const $=id=>document.getElementById(id);const money=n=>Math.round(n).toLocaleString('ru-RU')+' ₸';
+function refresh(){snapshot=store.read();s=snapshot.data;render()}
+function errorMessage(error){
+ if(error.code==='conflict'||error.code==='stale')return 'Данные изменились в другом окне. Проверь их и повтори действие.';
+ if(error.code==='invalid'||error instanceof SyntaxError)return 'Данные не прошли проверку. Сохранённая запись не изменена.';
+ return 'Не удалось сохранить данные. Проверь свободное место и доступ к хранилищу, затем повтори действие.';
+}
+async function persist(change,options){
+ try{
+  let result;
+  for(let attempt=0;;attempt++){
+   try{result=await store.update(change,options);break}
+   catch(error){if(error.code!=='stale'||attempt===3)throw error;await new Promise(resolve=>setTimeout(resolve,50))}
+  }
+  refresh();
+  if(result.cleanupFailed){toast('Основные данные удалены, но локальные копии удалить не удалось');return false}
+  return result.changed;
+ }catch(error){refresh();toast(errorMessage(error));return false}
+}
+async function captureForReplacement(discard=false){
+ for(let attempt=0;;attempt++){
+  try{return await store.capture({discard})}
+  catch(error){if(error.code!=='stale'||attempt===3)throw error;await new Promise(resolve=>setTimeout(resolve,50))}
+ }
+}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+let toastTimer;
+function toast(msg){clearTimeout(toastTimer);$('toast').textContent=msg;$('toast').classList.add('show');toastTimer=setTimeout(()=>$('toast').classList.remove('show'),4000)}
+function lvl(){return Math.floor(s.xp/500)+1}function isDone(id){return s.checks[today()]?.[id]===true}
+async function toggle(id,on){
+ const date=today();
+ if(await persist(next=>{
+  if(!next.tasks.some(t=>t.id===id))throw new LifeResetData.DataError('conflict');
+  if((next.checks[date]?.[id]===true)===on)return false;
+  if(on){next.checks[date]??={};next.checks[date][id]=true}
+  else{delete next.checks[date][id];if(Object.keys(next.checks[date]).length===0)delete next.checks[date]}
+ }))toast(on?'+20 XP':'−20 XP');
+}
+async function removeTask(id){
+ const expectedRaw=snapshot.raw;
+ const task=s.tasks.find(t=>t.id===id);
+ if(!task)return;
+ if(!confirm('Удалить привычку «'+task.name+'»? История её выполнений, опыт и прогресс характеристики за неё будут удалены. Это действие нельзя отменить.'))return;
+ if(await persist(next=>{
+  next.tasks=next.tasks.filter(t=>t.id!==id);
+  for(const [date,day] of Object.entries(next.checks)){
+   delete day[id];if(Object.keys(day).length===0)delete next.checks[date];
+  }
+ },{expectedRaw}))toast('Привычка удалена');
+}
+function render(){
+ $('dataWarning').hidden=!snapshot.error;
+ $('exportOriginal').disabled=snapshot.raw===null;
+ for(const [id,key] of [['exportBeforeUpgrade',UPGRADE_COPY],['exportBeforeImport',IMPORT_COPY]]){
+  try{$(id).hidden=localStorage.getItem(key)===null}catch(e){$(id).hidden=true}
+ }
+ $('today').textContent=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=s.focus||FOCUS_TIPS[s.focusIndex%FOCUS_TIPS.length];
+ const {counts}=progress(s);
+ $('stats').innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="stat"><small>${n}</small><b>LVL ${1+Math.floor(counts[k]/10)}</b><small>${counts[k]} заданий выполнено</small></div>`).join('');
+ const done=s.tasks.filter(t=>isDone(t.id)).length;$('progress').textContent=`${done} / ${s.tasks.length}`;$('daybar').style.width=(s.tasks.length?done/s.tasks.length*100:0)+'%';
+ const list=s.tasks.map(t=>`<label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label>`).join('')||'<div class="empty">Добавь первое задание.</div>';
+ $('tasks').innerHTML=list;
+ $('habitList').innerHTML=s.tasks.map(t=>`<div class="habit-row"><label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label><button type="button" class="delete-habit" data-delete-task="${esc(t.id)}" aria-label="Удалить привычку ${esc(t.name)}">Удалить</button></div>`).join('')||'<div class="empty">Добавь первое задание.</div>';
+ document.querySelectorAll('[data-task]').forEach(el=>el.addEventListener('change',()=>toggle(el.dataset.task,el.checked)));
+ document.querySelectorAll('[data-delete-task]').forEach(el=>el.addEventListener('click',()=>removeTask(el.dataset.deleteTask)));
+ $('goalList').innerHTML=s.goals.map((g,i)=>`<div class="goal row"><span>${esc(g)}</span><button class="secondary" data-goal="${i}">Удалить</button></div>`).join('')||'<div class="empty">Добавь цель, к которой хочешь двигаться.</div>';
+ document.querySelectorAll('[data-goal]').forEach(b=>b.onclick=async()=>{const expectedRaw=snapshot.raw;if(confirm('Удалить эту цель?')&&await persist(next=>{next.goals.splice(+b.dataset.goal,1)},{expectedRaw}))toast('Цель удалена')});
+ const inc=s.tx.filter(t=>t.kind==='income').reduce((a,t)=>a+t.amount,0),out=s.tx.filter(t=>t.kind!=='income').reduce((a,t)=>a+t.amount,0);
+ $('balance').textContent=money(inc-out);$('income').textContent=money(inc);$('outgo').textContent=money(out);$('txCount').textContent=s.tx.length;
+ $('transactions').innerHTML=s.tx.slice().reverse().map(t=>`<div class="tx row"><span>${esc(t.note||({income:'Доход',expense:'Расход',debt:'Погашение долга'}[t.kind]))}<small><br>${esc(t.date)} · ${{income:'Доход',expense:'Расход',debt:'Долг'}[t.kind]}</small></span><b>${t.kind==='income'?'+':'−'}${money(t.amount)}</b></div>`).join('')||'<div class="empty">Операций пока нет.</div>';
+ $('totalXp').textContent=s.xp+' XP';$('analyticsText').textContent=`Текущий уровень: ${lvl()}. Сегодня: ${done} из ${s.tasks.length} заданий. Всего целей: ${s.goals.length}. Финансовых операций: ${s.tx.length}. Баланс внесённых операций: ${money(inc-out)}.`;
+ $('backupDate').textContent=s.backupAt?'Последний экспорт: '+new Date(s.backupAt).toLocaleString('ru-RU'):'Резервная копия ещё не создавалась.';
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b))});
+$('addTask').onclick=()=>{$('taskForm').reset();$('taskName').value='';$('taskCategory').value='discipline';$('taskDialog').showModal();$('taskName').focus()};
+$('cancelTask').onclick=()=>$('taskDialog').close();
+$('taskForm').onsubmit=async e=>{
+ e.preventDefault();const button=e.submitter||$('taskForm').querySelector('[type="submit"]');if(button.disabled)return;
+ const name=$('taskName').value.trim(),cat=$('taskCategory').value;
+ if(!name)return toast('Введи название задания');if(!Object.hasOwn(CATS,cat))return toast('Выбери категорию');
+ button.disabled=true;
+ try{if(await persist(next=>{next.tasks.push({id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,cat})})){$('taskDialog').close();toast('Привычка добавлена')}}finally{button.disabled=false}
+};
+let goalDraft='';
+$('addGoal').onclick=async()=>{
+ const g=prompt('Название цели',goalDraft);if(g===null)return;goalDraft=g;
+ if(g.trim()&&await persist(next=>{next.goals.push(g.trim())})){goalDraft='';toast('Цель добавлена')}
+};
+$('nextFocus').onclick=()=>persist(next=>{delete next.focus;next.focusIndex=(next.focusIndex+1)%FOCUS_TIPS.length});
+$('saveTx').onclick=async()=>{
+ const button=$('saveTx');if(button.disabled)return;
+ const amount=Number($('amount').value),note=$('note').value.trim(),kind=$('kind').value,date=today();
+ if(!Number.isFinite(amount)||amount<=0||amount>Number.MAX_SAFE_INTEGER)return toast('Укажи корректную сумму');
+ button.disabled=true;
+ try{if(await persist(next=>{next.tx.push({id:'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),kind,amount,note,date})})){$('amount').value='';$('note').value='';toast('Операция сохранена')}}finally{button.disabled=false}
+};
+function downloadRaw(raw,label){
+ if(raw===null)return toast('Сохранённая запись недоступна');
+ const blob=new Blob([raw],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='life-reset-'+label+'-'+today()+'.json';document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),60000);toast('Файл резервной копии подготовлен');
+}
+function exportKey(key,label){try{downloadRaw(localStorage.getItem(key),label)}catch(e){toast('Не удалось прочитать сохранённую запись')}}
+$('exportOriginal').onclick=()=>exportKey(KEY,'recovery');
+$('exportBeforeUpgrade').onclick=()=>exportKey(UPGRADE_COPY,'before-upgrade');
+$('exportBeforeImport').onclick=()=>exportKey(IMPORT_COPY,'before-import');
+$('export').onclick=()=>{
+ const current=store.read();
+ downloadRaw(current.raw===null&&!current.error?JSON.stringify(current.data,null,2):current.raw,current.error?'recovery':'backup');
+ // Download stays available even when storage is full; metadata is optional.
+ if(!current.error)persist(next=>{next.backupAt=new Date().toISOString()},{expectedRaw:current.raw});
+};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{
+ const input=e.target,f=input.files[0];if(!f)return;
+ let readingFile=false;
+ try{
+  const {raw:expectedRaw,token:expectedToken}=await captureForReplacement();
+  readingFile=true;
+  if(f.size>5*1024*1024)throw Error();
+  const x=normalize(JSON.parse(await f.text()));
+  if(!confirm('Заменить текущие данные импортированной копией? Текущая запись будет сохранена отдельно.'))return;
+  if(await persist(()=>{}, {replacement:x,expectedRaw,expectedToken}))toast('Данные восстановлены');
+ }catch(err){toast(!readingFile||err.code==='conflict'||err.code==='stale'?errorMessage(err):'Файл не распознан как исправная резервная копия Life Reset. Данные не изменены.')}
+ finally{input.value=''}
+};
+$('resetChecks').onclick=async()=>{const expectedRaw=snapshot.raw,date=today();if(confirm('Сбросить сегодняшние отметки? Опыт за снятые отметки и прогресс характеристик тоже уменьшатся.')&&await persist(next=>{delete next.checks[date]},{expectedRaw}))toast('Отметки и XP за сегодня сброшены')};
+$('resetAll').onclick=async()=>{
+ let captured;try{captured=await captureForReplacement(true)}catch(error){toast(errorMessage(error));return}
+ const {raw:expectedRaw,token:expectedToken}=captured;
+ if(confirm('Удалить ВСЕ данные приложения, включая локальные резервные копии? Сначала экспортируй резервную копию.')){
+  if(await persist(()=>{}, {replacement:defaults(),expectedRaw,expectedToken,discardCopies:true}))toast('Данные удалены');
+ }
+};
+window.addEventListener('storage',e=>{if(e.key===KEY||e.key===null)refresh()});
+window.addEventListener('pageshow',refresh);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+render();
+if('serviceWorker'in navigator && location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>

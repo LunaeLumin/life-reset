@@ -1,0 +1,13 @@
+{
+  "version": "0.4.1",
+  "sourceCommit": "13e65902dabe0138d4df41ca0a58cbb5a2e31594",
+  "sourceHashes": {
+    "index.html": "84b1ad81ba4ce003550a4acfd14afd68a9394118c9b36b26a531b1e478f4392e",
+    "data.js": "86b190bdeb21525a558fc1ee46bcf5c6f566533d82b90a951de9952a253eb8dd",
+    "sw.js": "a4bda751c0a2688a86cab6e843fb91b09d615651a8e01ae7f5f7296a8f6b9d2d",
+    "manifest.webmanifest": "6adcb3547e5f2dac8627cdd30e09423d8ef32b9f22db919c0e3c043bbeb2e653",
+    "icon.svg": "9f9ef81570097985c4101ce33ea072dd621bf89fa9b60d51748eca732b9a213a"
+  },
+  "storageKey": "lr-preview-0.4.1",
+  "cachePrefix": "lr-preview-0.4.1-"
+}
