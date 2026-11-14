@@ -7,9 +7,9 @@ const os=require('node:os');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const {KEY,UPGRADE_COPY,IMPORT_COPY,defaults}=require('../data.js');
-const {buildPreview,PREVIEW_KEY,CACHE_PREFIX}=require('../scripts/build-preview.cjs');
+const {buildPreview,PREVIEW_KEY,CACHE_PREFIX,VERSION,PREVIEW_PATH,FILES}=require('../scripts/build-preview.cjs');
 const root=path.resolve(__dirname,'..');
-const oldRef='d17a393806524b1791664bf043ce516c02c93e2f';
+const oldRef='5d958710c340e3e8e7503cc8345c59899b3b0cad';
 let browser,server,base,temp,serveOld=false;
 before(async()=>{
  temp=fs.mkdtempSync(path.join(os.tmpdir(),'life-reset-tests-'));
@@ -18,9 +18,9 @@ before(async()=>{
  const oldSw=execFileSync('git',['show',oldRef+':sw.js'],{cwd:root});
  buildPreview(root,path.join(temp,'preview'),execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim());
  server=https.createServer({key:fs.readFileSync(path.join(temp,'key.pem')),cert:fs.readFileSync(path.join(temp,'cert.pem'))},(req,res)=>{
-  const urlPath=new URL(req.url,'https://localhost').pathname,isPreview=urlPath.startsWith('/life-reset/preview/0.4.1/');
-  const filename=urlPath.replace(isPreview?/^\/life-reset\/preview\/0.4.1\//:/^\/life-reset\//,'')||'index.html';
-  if(!['index.html','data.js','sw.js','manifest.webmanifest','icon.svg'].includes(filename)){res.writeHead(404);return res.end()}
+  const urlPath=new URL(req.url,'https://localhost').pathname,isPreview=urlPath.startsWith(PREVIEW_PATH);
+  const filename=urlPath.slice(isPreview?PREVIEW_PATH.length:'/life-reset/'.length)||'index.html';
+  if(!FILES.includes(filename)){res.writeHead(404);return res.end()}
   const body=isPreview?fs.readFileSync(path.join(temp,'preview',filename)):serveOld&&filename==='index.html'?oldHtml:serveOld&&filename==='sw.js'?oldSw:fs.readFileSync(path.join(root,filename));
   const type=filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':filename.endsWith('.webmanifest')?'application/manifest+json':'text/html';
   res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});res.end(body);
@@ -29,8 +29,8 @@ before(async()=>{
  browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH}:{}),args:['--ignore-certificate-errors']});
 });
 after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));if(temp)fs.rmSync(temp,{recursive:true,force:true})});
-async function open(t,{raw,fallback=false,serviceWorkers='block'}={}){
- const context=await browser.newContext({...devices['iPhone 13'],timezoneId:'Asia/Qyzylorda',ignoreHTTPSErrors:true,serviceWorkers});
+async function open(t,{raw,fallback=false,serviceWorkers='block',reducedMotion}={}){
+ const context=await browser.newContext({...devices['iPhone 13'],timezoneId:'Asia/Qyzylorda',ignoreHTTPSErrors:true,serviceWorkers,...(reducedMotion?{reducedMotion}:{})});
  t.after(()=>context.close());
  if(fallback)await context.addInitScript(()=>Object.defineProperty(navigator,'locks',{value:undefined}));
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -125,28 +125,28 @@ test('legacy upgrade keeps XP and focus and exposes its exact source copy',async
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),UPGRADE_COPY),raw);assert.equal(JSON.parse(await saved(page)).xp,120);
  await page.locator('[data-tab="analytics"]').click();assert.equal(await page.locator('#exportBeforeUpgrade').isVisible(),true);
 });
-test('v0.4 service worker updates to 0.4.1 and the new script loads offline with old data',async t=>{
+test('v0.4.1 service worker updates to current version and all scripts load offline with old data',async t=>{
  serveOld=true;t.after(()=>{serveOld=false});
  const {page,context,errors}=await open(t,{serviceWorkers:'allow'});
  await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
  await page.locator('#tasks [data-task="walk"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='20 XP');
  const before=JSON.parse(await saved(page));serveOld=false;
  await page.evaluate(async()=>{const reg=await navigator.serviceWorker.ready;await reg.update()});
- await page.waitForFunction(async()=>(await caches.keys()).includes('life-reset-v4.1'));
- await page.waitForFunction(async()=>{const c=await caches.open('life-reset-v4.1');return !!(await c.match('./data.js'))});
- await page.reload();await page.waitForFunction(()=>document.querySelector('header .eyebrow').textContent.includes('0.4.1'));
+ await page.waitForFunction(async cache=>(await caches.keys()).includes(cache),'life-reset-v'+VERSION);
+ await page.waitForFunction(async cache=>{const c=await caches.open(cache);return !!(await c.match('./progression.js'))},'life-reset-v'+VERSION);
+ await page.reload();await page.waitForFunction(version=>document.querySelector('header .eyebrow').textContent.includes(version),VERSION);
  assert.deepEqual(JSON.parse(await saved(page)),before);
  await context.setOffline(true);await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
  await page.locator('#tasks [data-task="move"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='40 XP');await page.reload();assert.equal(await page.locator('#xp').textContent(),'40 XP');assert.deepEqual(errors,[]);
 });
-test('preview and installed v0.4 share an origin without sharing data or offline caches',async t=>{
+test('preview and installed v0.4.1 share an origin without sharing data or offline caches',async t=>{
  serveOld=true;t.after(()=>{serveOld=false});
  const original={...defaults(),checks:{'2026-11-14':{walk:true}},xp:20,goals:['Основная цель'],tx:[{id:'original',kind:'income',amount:2500,date:'2026-11-14'}]};
  const raw=JSON.stringify(original),{page:production,context}=await open(t,{raw,serviceWorkers:'allow'});
  await production.evaluate(()=>navigator.serviceWorker.ready);await production.reload();
  await production.waitForFunction(()=>!!navigator.serviceWorker.controller);
- const preview=await context.newPage();await preview.goto(base+'preview/0.4.1/');
- await preview.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/preview/0.4.1/sw.js'));
+ const preview=await context.newPage();await preview.goto(new URL(PREVIEW_PATH,base).href);
+ await preview.waitForFunction(path=>navigator.serviceWorker.controller?.scriptURL.endsWith(path+'sw.js'),PREVIEW_PATH);
  assert.equal(await preview.evaluate(()=>KEY),PREVIEW_KEY);
  assert.equal(await preview.locator('#xp').textContent(),'0 XP');assert.equal(await preview.locator('#previewNotice').isVisible(),true);
  const manifest=await preview.evaluate(async()=>await (await fetch('manifest.webmanifest')).json());assert.equal(manifest.short_name,'LR Тест');
@@ -154,11 +154,65 @@ test('preview and installed v0.4 share an origin without sharing data or offline
  await preview.locator('[data-tab="financeView"]').click();await preview.locator('#amount').fill('50');await preview.locator('#saveTx').click();await toast(preview,'Операция сохранена');
  assert.equal(await saved(production),raw);
  assert.equal(await preview.evaluate(key=>JSON.parse(localStorage.getItem(key)).tx.length,PREVIEW_KEY),2);
- const keys=await preview.evaluate(()=>caches.keys());assert.ok(keys.includes('life-reset-v4'));assert.ok(keys.includes(CACHE_PREFIX+'v1'));
+ const keys=await preview.evaluate(()=>caches.keys());assert.ok(keys.includes('life-reset-v4.1'));assert.ok(keys.includes(CACHE_PREFIX+'v1'));
  const registrations=await preview.evaluate(async()=>Promise.all((await navigator.serviceWorker.getRegistrations()).map(r=>r.scope)));
- assert.ok(registrations.includes(base));assert.ok(registrations.includes(base+'preview/0.4.1/'));
+ assert.ok(registrations.includes(base));assert.ok(registrations.includes(new URL(PREVIEW_PATH,base).href));
  await context.setOffline(true);await preview.reload();assert.equal(await preview.locator('#previewNotice').isVisible(),true);assert.equal(await preview.locator('#xp').textContent(),'20 XP');
  await production.reload();assert.equal(await production.locator('#previewNotice').count(),0);assert.equal(await saved(production),raw);
  await context.setOffline(false);await preview.locator('[data-tab="analytics"]').click();preview.once('dialog',d=>d.accept());await preview.locator('#resetAll').click();await toast(preview,'Данные удалены');
  assert.equal(await saved(production),raw);assert.equal(await preview.evaluate(key=>JSON.parse(localStorage.getItem(key)).tx.length,PREVIEW_KEY),0);
+});
+test('cancelling habit deletion on a touch screen restores the initial button color',async t=>{
+ const raw=JSON.stringify(defaults()),{page}=await open(t,{raw});await page.locator('[data-tab="habits"]').tap();
+ const button=page.locator('[data-delete-task="walk"]');
+ const color=await button.evaluate(el=>({background:getComputedStyle(el).backgroundColor,text:getComputedStyle(el).color}));
+ page.once('dialog',d=>d.dismiss());await button.tap();
+ assert.deepEqual(await button.evaluate(el=>({background:getComputedStyle(el).backgroundColor,text:getComputedStyle(el).color})),color);
+ assert.equal(await saved(page),raw);assert.equal(await button.count(),1);
+});
+test('existing income, expense and debt entries can be removed individually even with duplicate IDs',async t=>{
+ const data=defaults();data.goals=['Старая цель'];data.checks={'2026-11-13':{walk:true}};data.xp=20;
+ data.tx=[{id:'old',kind:'income',amount:5000,date:'2026-11-13',note:'Старый доход'},{id:'old',kind:'expense',amount:1000,date:'2026-11-13',note:'Старый расход'},{id:'debt',kind:'debt',amount:500,date:'2026-11-13'}];
+ const raw=JSON.stringify(data),{page}=await open(t,{raw});await page.locator('[data-tab="financeView"]').click();
+ const balance=async()=> (await page.locator('#balance').textContent()).replace(/\s/g,'');
+ assert.equal(await balance(),'3500₸');page.once('dialog',d=>d.dismiss());await page.locator('[data-delete-tx="1"]').tap();assert.equal(await saved(page),raw);
+ page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="1"]').click();await toast(page,'Операция удалена');assert.equal(await balance(),'4500₸');
+ await page.reload();const remaining=JSON.parse(await saved(page));assert.deepEqual(remaining.tx,[data.tx[0],data.tx[2]]);assert.deepEqual(remaining.goals,data.goals);assert.deepEqual(remaining.checks,data.checks);assert.equal(remaining.xp,20);
+ await page.locator('[data-tab="financeView"]').click();page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await toast(page,'Операция удалена');assert.equal(await balance(),'-500₸');
+ page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await page.waitForFunction(()=>document.getElementById('txCount').textContent==='0');assert.equal(await balance(),'0₸');
+ assert.equal(await page.locator('#transactions .empty').isVisible(),true);
+});
+test('financial deletion retains the row and balance if saving fails',async t=>{
+ const data=defaults();data.tx=[{id:'old',kind:'income',amount:500,date:'2026-11-13'}];const raw=JSON.stringify(data),{page}=await open(t,{raw});
+ await page.locator('[data-tab="financeView"]').click();await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
+ page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await toast(page,'Не удалось сохранить');assert.equal(await saved(page),raw);assert.equal(await page.locator('[data-delete-tx]').count(),1);assert.equal(await page.locator('#balance').textContent(),'500 ₸');
+});
+test('financial deletion rejects a changed snapshot while confirmation is open',async t=>{
+ const data=defaults();data.tx=[{id:'old',kind:'income',amount:500,date:'2026-11-13'}];const {page,context}=await open(t,{raw:JSON.stringify(data)}),second=await context.newPage();await second.goto(base);
+ await page.locator('[data-tab="financeView"]').click();
+ page.once('dialog',async d=>{await second.evaluate(()=>persist(next=>{next.tx.push({id:'new',kind:'expense',amount:100,date:'2026-11-14'})}));await d.accept()});
+ await page.locator('[data-delete-tx="0"]').click();await toast(page,'Данные изменились');const stored=JSON.parse(await saved(page));assert.equal(stored.tx.length,2);assert.deepEqual(stored.tx[0],data.tx[0]);
+});
+test('avatar path is read-only and the layout fits small iPhone screens at every stage',async t=>{
+ const {page,errors}=await open(t);
+ for(const [xp,index] of [[0,0],[1000,1],[2000,2],[4500,3],[9500,4]]){
+  const data={...defaults(),xp,legacyXp:xp},raw=JSON.stringify(data);await page.evaluate(({key,raw})=>localStorage.setItem(key,raw),{key:KEY,raw});await page.reload();
+  assert.equal(await page.locator('#avatarButton').getAttribute('data-stage'),String(index));
+  for(const width of [320,375,390,430]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
+  await page.locator('#avatarButton').click();assert.equal(await page.locator('#stageDialog').isVisible(),true);assert.equal(await page.locator('#stageList li').count(),5);assert.equal(await page.locator('#stageList [aria-current="step"]').count(),1);await page.locator('#closeStageDialog').click();assert.equal(await saved(page),raw);
+ }
+ assert.deepEqual(errors,[]);
+});
+for(const reducedMotion of ['no-preference','reduce'])test(`earning a level changes the avatar and theme; unchecking restores them (${reducedMotion})`,async t=>{
+ const data={...defaults(),xp:980,legacyXp:980},{page}=await open(t,{raw:JSON.stringify(data),reducedMotion});
+ const initialColor=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+ await page.locator('#tasks [data-task="walk"]').check();await toast(page,'Новый уровень — 3');assert.equal(await page.locator('#stageName').textContent(),'Ритм');assert.equal(await page.locator('#avatarButton').getAttribute('data-stage'),'1');
+ assert.notEqual(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent')),initialColor);
+ if(reducedMotion==='reduce')assert.equal(await page.locator('#avatarButton').evaluate(el=>getComputedStyle(el).animationName),'none');
+ await page.reload();assert.equal(await page.locator('#stageName').textContent(),'Ритм');assert.equal(await page.locator('#toast').textContent(),'');
+ await page.locator('#tasks [data-task="walk"]').uncheck();await page.waitForFunction(()=>document.getElementById('xp').textContent==='980 XP');assert.equal(await page.locator('#stageName').textContent(),'Искра');assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent')),initialColor);
+});
+test('failed save at a level boundary does not unlock an avatar or show a celebration',async t=>{
+ const data={...defaults(),xp:980,legacyXp:980},raw=JSON.stringify(data),{page}=await open(t,{raw});await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
+ await page.locator('#tasks [data-task="walk"]').check();await toast(page,'Не удалось сохранить');assert.equal(await saved(page),raw);assert.equal(await page.locator('#stageName').textContent(),'Искра');assert.equal(await page.locator('#profileCard').getAttribute('class'),'card');
 });

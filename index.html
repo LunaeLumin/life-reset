@@ -10,17 +10,21 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px calc(92px + env(safe-area-inset-bottom));max-width:760px;margin:auto}
 header{display:flex;justify-content:space-between;align-items:center;padding:22px 2px 18px}h1{font-size:19px;letter-spacing:.13em;margin:0}.date{font-size:12px;color:var(--muted)}small,.muted{color:var(--muted)}main{display:grid;gap:14px}.view{display:none}.view.active{display:grid;gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}.hero,.row,.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.hero{align-items:flex-start}.section-head{margin-bottom:12px}h2{font-size:16px;margin:0}.level{font-size:30px;font-weight:700;margin-top:5px}.xp{font-size:12px;color:var(--muted);text-align:right}.bar{height:7px;border-radius:8px;background:var(--panel2);overflow:hidden;margin-top:14px}.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.stat{background:var(--panel2);border-radius:13px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.task{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--line)}.task:first-of-type{border-top:0}.task input{appearance:none;width:21px;height:21px;border:1px solid #626976;border-radius:7px;flex:none}.task input:checked{background:var(--accent);border-color:var(--accent)}.task input:checked:after{content:"✓";display:block;color:#111;font-weight:800;text-align:center;line-height:19px}.task.done span{text-decoration:line-through;color:var(--muted)}.habit-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}.habit-row .task{flex:1;min-width:0;border-top:0}.habit-row .task span{overflow-wrap:anywhere}.delete-habit{flex:none;background:transparent;color:#f5a8a8;border:1px solid #8d4c4c;padding:8px 10px;font-size:12px}.delete-habit:hover{background:#4c2525}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.stat{background:var(--panel2);border-radius:13px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.task{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--line)}.task:first-of-type{border-top:0}.task input{appearance:none;width:21px;height:21px;border:1px solid #626976;border-radius:7px;flex:none}.task input:checked{background:var(--accent);border-color:var(--accent)}.task input:checked:after{content:"✓";display:block;color:#111;font-weight:800;text-align:center;line-height:19px}.task.done span{text-decoration:line-through;color:var(--muted)}.habit-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}.habit-row .task{flex:1;min-width:0;border-top:0}.habit-row .task span{overflow-wrap:anywhere}.delete-action{flex:none;background:transparent;color:#f5a8a8;border:1px solid #8d4c4c;padding:8px 10px;font-size:12px;min-height:44px;-webkit-tap-highlight-color:transparent}
 button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;padding:11px 14px;font-weight:650;font-size:13px;cursor:pointer}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.danger{background:#3a2226;color:#ffb0b0;border:1px solid #684047}.nav{position:fixed;bottom:0;left:0;right:0;background:#14161bed;border-top:1px solid var(--line);display:flex;justify-content:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(16px);z-index:4}.nav-inner{display:flex;max-width:760px;width:100%;justify-content:space-around}.nav button{background:transparent;color:var(--muted);padding:8px 7px;font-weight:500}.nav button.active{color:var(--accent)}.field{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;margin:7px 0 12px;font:inherit}.goal,.tx{padding:12px 0;border-top:1px solid var(--line)}.goal:first-child,.tx:first-child{border:0}.hint{font-size:12px;color:var(--muted);line-height:1.5}.empty{color:var(--muted);font-size:13px;padding:12px 0}.pill{font-size:11px;padding:4px 8px;border-radius:99px;background:var(--panel2);color:var(--muted)}.split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{font-size:23px;font-weight:700;margin:6px 0}.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#e8f4b0;color:#15170f;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:10}.toast.show{opacity:1}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:20px;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 40px)}dialog::backdrop{background:#000b;backdrop-filter:blur(5px)}dialog h2{margin-bottom:15px}dialog .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}dialog form{margin:0}dialog label{display:block}
+.profile-main{display:flex;align-items:center;gap:10px;min-width:0}.profile-main .eyebrow{font-size:10px;letter-spacing:.06em}.profile-main .level{white-space:nowrap}#profileCard .xp{max-width:45%;overflow-wrap:anywhere}.avatar-button{width:52px;height:52px;padding:0;flex:none;border:1px solid var(--line);border-radius:18px;background:var(--panel2);color:var(--accent)}.avatar-button svg,.stage-preview svg{display:block;width:100%;height:100%}.profile-caption{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}.profile-caption .pill{color:var(--accent)}.profile-caption .hint{font-size:11px}.stage-list{list-style:none;display:grid;gap:8px;padding:0;margin:16px 0}.stage-row{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:12px}.stage-row[aria-current="step"]{background:var(--panel2)}.stage-preview{width:44px;height:44px;flex:none}.stage-meta{flex:1}.stage-meta small{display:block;font-size:11px;margin-top:3px}.tx-main{min-width:0;overflow-wrap:anywhere}.tx-side{display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:55%;flex:none}.tx-side b{overflow-wrap:anywhere;max-width:100%;text-align:right}.level-up .avatar-button{animation:level-up .8s ease-out}@keyframes level-up{0%,100%{transform:scale(1);box-shadow:0 0 0 0 transparent}45%{transform:scale(1.08);box-shadow:0 0 0 8px var(--panel2)}}
+@media(hover:hover) and (pointer:fine){.delete-action:hover{background:#4c2525}}
+@media(prefers-reduced-motion:reduce){.level-up .avatar-button{animation:none}.bar>i{transition:none}}
+@media(min-width:360px){.avatar-button{width:64px;height:64px}}
 @media(min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
-<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.4.1</span></header>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.5.0</span></header>
 <main>
 <div id="dataWarning" class="card" role="alert" hidden><p>Не удалось прочитать сохранённые данные. Исходная запись сохранена без изменений. Скачай её для восстановления или импортируй исправную копию в разделе «Ещё».</p><button id="exportOriginal" class="secondary">Скачать исходную запись</button></div>
 <section id="dashboard" class="view active">
- <div class="card"><div class="hero"><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="bar"><i id="xpbar"></i></div></div>
+ <div class="card" id="profileCard"><div class="hero"><div class="profile-main"><button type="button" class="avatar-button" id="avatarButton" aria-label="Посмотреть этапы развития аватара" aria-haspopup="dialog"></button><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="profile-caption"><span class="pill" id="stageName">Искра</span><span class="hint" id="nextLook">Новый облик: LVL 3</span></div><div class="bar"><i id="xpbar"></i></div></div>
  <div class="card"><div class="section-head"><h2>Характеристики</h2><span class="eyebrow">ПРОГРЕСС</span></div><div class="stats" id="stats"></div></div>
  <div class="card"><div class="section-head"><h2>Задания на сегодня</h2><span class="eyebrow" id="progress">0 / 0</span></div><div id="tasks"></div><div class="bar"><i id="daybar"></i></div></div>
  <div class="card"><div class="eyebrow">Фокус дня</div><p id="focusText">Стабильность важнее идеального дня.</p><button class="secondary" id="nextFocus">Другой совет</button></div>
@@ -58,10 +62,18 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
   <div class="dialog-actions"><button type="button" class="secondary" id="cancelTask">Отмена</button><button type="submit">Добавить привычку</button></div>
  </form>
 </dialog>
+<dialog id="stageDialog" aria-labelledby="stageDialogTitle">
+ <h2 id="stageDialogTitle">Твой путь</h2>
+ <p class="hint">Аватар и цвет акцента меняются с ростом уровня. Каждый уровень — 500 XP.</p>
+ <ol class="stage-list" id="stageList"></ol>
+ <div class="dialog-actions"><button type="button" id="closeStageDialog">Понятно</button></div>
+</dialog>
 <nav class="nav"><div class="nav-inner"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="habits">Привычки</button><button data-tab="goals">Цели</button><button data-tab="financeView">Финансы</button><button data-tab="analytics">Ещё</button></div></nav><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="data.js"></script>
+<script src="progression.js"></script>
 <script>
 const {KEY,CATS,UPGRADE_COPY,IMPORT_COPY,defaults,progress,normalize,Store}=LifeResetData;
+const {STAGES,appearance,avatarMarkup}=LifeResetProgression;
 const FOCUS_TIPS=[
  'Стабильность важнее идеального дня.',
  'Если сил мало, сделай всего 5 минут. Это тоже движение вперёд.',
@@ -117,13 +129,24 @@ let toastTimer;
 function toast(msg){clearTimeout(toastTimer);$('toast').textContent=msg;$('toast').classList.add('show');toastTimer=setTimeout(()=>$('toast').classList.remove('show'),4000)}
 function lvl(){return Math.floor(s.xp/500)+1}function isDone(id){return s.checks[today()]?.[id]===true}
 async function toggle(id,on){
- const date=today();
+ const date=today();let reachedLevel=null;
  if(await persist(next=>{
   if(!next.tasks.some(t=>t.id===id))throw new LifeResetData.DataError('conflict');
   if((next.checks[date]?.[id]===true)===on)return false;
   if(on){next.checks[date]??={};next.checks[date][id]=true}
   else{delete next.checks[date][id];if(Object.keys(next.checks[date]).length===0)delete next.checks[date]}
- }))toast(on?'+20 XP':'−20 XP');
+  const after=appearance(progress(next).xp);
+  if(on&&after.level>appearance(next.xp).level)reachedLevel=after;
+ })){
+  if(reachedLevel)celebrateLevel(reachedLevel);else toast(on?'+20 XP':'−20 XP');
+ }
+}
+let celebrationTimer;
+function celebrateLevel(visual){
+ clearTimeout(celebrationTimer);
+ const card=$('profileCard');card.classList.remove('level-up');void card.offsetWidth;card.classList.add('level-up');
+ celebrationTimer=setTimeout(()=>card.classList.remove('level-up'),850);
+ toast('Новый уровень — '+visual.level+'!'+(visual.stage.level===visual.level?' Открыт облик «'+visual.stage.name+'».':''));
 }
 async function removeTask(id){
  const expectedRaw=snapshot.raw;
@@ -137,6 +160,13 @@ async function removeTask(id){
   }
  },{expectedRaw}))toast('Привычка удалена');
 }
+async function removeTransaction(index){
+ const expectedRaw=snapshot.raw,tx=s.tx[index];
+ if(!tx)return;
+ const name=tx.note||{income:'Доход',expense:'Расход',debt:'Погашение долга'}[tx.kind];
+ if(!confirm('Удалить операцию «'+name+'» на '+money(tx.amount)+'? Баланс будет пересчитан.'))return;
+ if(await persist(next=>{next.tx.splice(index,1)},{expectedRaw}))toast('Операция удалена');
+}
 function render(){
  $('dataWarning').hidden=!snapshot.error;
  $('exportOriginal').disabled=snapshot.raw===null;
@@ -145,23 +175,32 @@ function render(){
  }
  $('today').textContent=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
  $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=s.focus||FOCUS_TIPS[s.focusIndex%FOCUS_TIPS.length];
+ const visual=appearance(s.xp);
+ document.documentElement.style.setProperty('--accent',visual.stage.color);
+ $('avatarButton').innerHTML=avatarMarkup(visual.index);$('avatarButton').dataset.stage=visual.index;
+ $('avatarButton').setAttribute('aria-label','Аватар «'+visual.stage.name+'». Посмотреть этапы развития');
+ $('stageName').textContent=visual.stage.name;$('nextLook').textContent=visual.next?'Новый облик: LVL '+visual.next.level:'Все облики открыты';
+ $('stageList').innerHTML=STAGES.map((stage,index)=>`<li class="stage-row" ${index===visual.index?'aria-current="step"':''}><span class="stage-preview" style="color:${stage.color}">${avatarMarkup(index)}</span><span class="stage-meta"><b>${stage.name}</b><small>LVL ${stage.level} · ${((stage.level-1)*500).toLocaleString('ru-RU')} XP</small></span>${index===visual.index?'<span class="pill">Сейчас</span>':''}</li>`).join('');
  const {counts}=progress(s);
  $('stats').innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="stat"><small>${n}</small><b>LVL ${1+Math.floor(counts[k]/10)}</b><small>${counts[k]} заданий выполнено</small></div>`).join('');
  const done=s.tasks.filter(t=>isDone(t.id)).length;$('progress').textContent=`${done} / ${s.tasks.length}`;$('daybar').style.width=(s.tasks.length?done/s.tasks.length*100:0)+'%';
  const list=s.tasks.map(t=>`<label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label>`).join('')||'<div class="empty">Добавь первое задание.</div>';
  $('tasks').innerHTML=list;
- $('habitList').innerHTML=s.tasks.map(t=>`<div class="habit-row"><label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label><button type="button" class="delete-habit" data-delete-task="${esc(t.id)}" aria-label="Удалить привычку ${esc(t.name)}">Удалить</button></div>`).join('')||'<div class="empty">Добавь первое задание.</div>';
+ $('habitList').innerHTML=s.tasks.map(t=>`<div class="habit-row"><label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label><button type="button" class="delete-habit delete-action" data-delete-task="${esc(t.id)}" aria-label="Удалить привычку ${esc(t.name)}">Удалить</button></div>`).join('')||'<div class="empty">Добавь первое задание.</div>';
  document.querySelectorAll('[data-task]').forEach(el=>el.addEventListener('change',()=>toggle(el.dataset.task,el.checked)));
  document.querySelectorAll('[data-delete-task]').forEach(el=>el.addEventListener('click',()=>removeTask(el.dataset.deleteTask)));
  $('goalList').innerHTML=s.goals.map((g,i)=>`<div class="goal row"><span>${esc(g)}</span><button class="secondary" data-goal="${i}">Удалить</button></div>`).join('')||'<div class="empty">Добавь цель, к которой хочешь двигаться.</div>';
  document.querySelectorAll('[data-goal]').forEach(b=>b.onclick=async()=>{const expectedRaw=snapshot.raw;if(confirm('Удалить эту цель?')&&await persist(next=>{next.goals.splice(+b.dataset.goal,1)},{expectedRaw}))toast('Цель удалена')});
  const inc=s.tx.filter(t=>t.kind==='income').reduce((a,t)=>a+t.amount,0),out=s.tx.filter(t=>t.kind!=='income').reduce((a,t)=>a+t.amount,0);
  $('balance').textContent=money(inc-out);$('income').textContent=money(inc);$('outgo').textContent=money(out);$('txCount').textContent=s.tx.length;
- $('transactions').innerHTML=s.tx.slice().reverse().map(t=>`<div class="tx row"><span>${esc(t.note||({income:'Доход',expense:'Расход',debt:'Погашение долга'}[t.kind]))}<small><br>${esc(t.date)} · ${{income:'Доход',expense:'Расход',debt:'Долг'}[t.kind]}</small></span><b>${t.kind==='income'?'+':'−'}${money(t.amount)}</b></div>`).join('')||'<div class="empty">Операций пока нет.</div>';
+ $('transactions').innerHTML=s.tx.map((t,index)=>({t,index})).reverse().map(({t,index})=>`<div class="tx row"><span class="tx-main">${esc(t.note||({income:'Доход',expense:'Расход',debt:'Погашение долга'}[t.kind]))}<small><br>${esc(t.date)} · ${{income:'Доход',expense:'Расход',debt:'Долг'}[t.kind]}</small></span><span class="tx-side"><b>${t.kind==='income'?'+':'−'}${money(t.amount)}</b><button type="button" class="delete-action delete-tx" data-delete-tx="${index}" aria-label="Удалить операцию ${esc(t.note||t.date)} на ${money(t.amount)}">Удалить</button></span></div>`).join('')||'<div class="empty">Операций пока нет.</div>';
+ document.querySelectorAll('[data-delete-tx]').forEach(button=>button.onclick=()=>removeTransaction(+button.dataset.deleteTx));
  $('totalXp').textContent=s.xp+' XP';$('analyticsText').textContent=`Текущий уровень: ${lvl()}. Сегодня: ${done} из ${s.tasks.length} заданий. Всего целей: ${s.goals.length}. Финансовых операций: ${s.tx.length}. Баланс внесённых операций: ${money(inc-out)}.`;
  $('backupDate').textContent=s.backupAt?'Последний экспорт: '+new Date(s.backupAt).toLocaleString('ru-RU'):'Резервная копия ещё не создавалась.';
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b))});
+$('avatarButton').onclick=()=>$('stageDialog').showModal();
+$('closeStageDialog').onclick=()=>$('stageDialog').close();
 $('addTask').onclick=()=>{$('taskForm').reset();$('taskName').value='';$('taskCategory').value='discipline';$('taskDialog').showModal();$('taskName').focus()};
 $('cancelTask').onclick=()=>$('taskDialog').close();
 $('taskForm').onsubmit=async e=>{
