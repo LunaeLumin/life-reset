@@ -10,13 +10,13 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px calc(92px + env(safe-area-inset-bottom));max-width:760px;margin:auto}
 header{display:flex;justify-content:space-between;align-items:center;padding:22px 2px 18px}h1{font-size:19px;letter-spacing:.13em;margin:0}.date{font-size:12px;color:var(--muted)}small,.muted{color:var(--muted)}main{display:grid;gap:14px}.view{display:none}.view.active{display:grid;gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}.hero,.row,.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.hero{align-items:flex-start}.section-head{margin-bottom:12px}h2{font-size:16px;margin:0}.level{font-size:30px;font-weight:700;margin-top:5px}.xp{font-size:12px;color:var(--muted);text-align:right}.bar{height:7px;border-radius:8px;background:var(--panel2);overflow:hidden;margin-top:14px}.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.stat{background:var(--panel2);border-radius:13px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.task{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--line)}.task:first-of-type{border-top:0}.task input{appearance:none;width:21px;height:21px;border:1px solid #626976;border-radius:7px;flex:none}.task input:checked{background:var(--accent);border-color:var(--accent)}.task input:checked:after{content:"✓";display:block;color:#111;font-weight:800;text-align:center;line-height:19px}.task.done span{text-decoration:line-through;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.stat{background:var(--panel2);border-radius:13px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.task{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--line)}.task:first-of-type{border-top:0}.task input{appearance:none;width:21px;height:21px;border:1px solid #626976;border-radius:7px;flex:none}.task input:checked{background:var(--accent);border-color:var(--accent)}.task input:checked:after{content:"✓";display:block;color:#111;font-weight:800;text-align:center;line-height:19px}.task.done span{text-decoration:line-through;color:var(--muted)}.habit-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}.habit-row .task{flex:1;min-width:0;border-top:0}.habit-row .task span{overflow-wrap:anywhere}.delete-habit{flex:none;background:transparent;color:#f5a8a8;border:1px solid #8d4c4c;padding:8px 10px;font-size:12px}.delete-habit:hover{background:#4c2525}
 button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;padding:11px 14px;font-weight:650;font-size:13px;cursor:pointer}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.danger{background:#3a2226;color:#ffb0b0;border:1px solid #684047}.nav{position:fixed;bottom:0;left:0;right:0;background:#14161bed;border-top:1px solid var(--line);display:flex;justify-content:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(16px);z-index:4}.nav-inner{display:flex;max-width:760px;width:100%;justify-content:space-around}.nav button{background:transparent;color:var(--muted);padding:8px 7px;font-weight:500}.nav button.active{color:var(--accent)}.field{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;margin:7px 0 12px;font:inherit}.goal,.tx{padding:12px 0;border-top:1px solid var(--line)}.goal:first-child,.tx:first-child{border:0}.hint{font-size:12px;color:var(--muted);line-height:1.5}.empty{color:var(--muted);font-size:13px;padding:12px 0}.pill{font-size:11px;padding:4px 8px;border-radius:99px;background:var(--panel2);color:var(--muted)}.split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{font-size:23px;font-weight:700;margin:6px 0}.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#e8f4b0;color:#15170f;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:10}.toast.show{opacity:1}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:20px;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 40px)}dialog::backdrop{background:#000b;backdrop-filter:blur(5px)}dialog h2{margin-bottom:15px}dialog .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}dialog form{margin:0}dialog label{display:block}
 @media(min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
-<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.3</span></header>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.4</span></header>
 <main>
 <section id="dashboard" class="view active">
  <div class="card"><div class="hero"><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="bar"><i id="xpbar"></i></div></div>
@@ -119,6 +119,19 @@ function toggle(id,on){
  else{delete s.checks[today()][id];if(Object.keys(s.checks[today()]).length===0)delete s.checks[today()]}
  persist();toast(on?'+20 XP':'−20 XP');
 }
+function removeTask(id){
+ const task=s.tasks.find(t=>t.id===id);
+ if(!task)return;
+ if(!confirm('Удалить привычку «'+task.name+'»? История её выполнений, опыт и прогресс характеристики за неё будут удалены. Это действие нельзя отменить.'))return;
+ s.tasks=s.tasks.filter(t=>t.id!==id);
+ for(const [date,day] of Object.entries(s.checks)){
+  if(!day||typeof day!=='object')continue;
+  delete day[id];
+  if(Object.keys(day).length===0)delete s.checks[date];
+ }
+ persist();
+ toast('Привычка удалена');
+}
 function render(){
  $('today').textContent=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
  $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=FOCUS_TIPS[s.focusIndex%FOCUS_TIPS.length];
@@ -126,8 +139,10 @@ function render(){
  $('stats').innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="stat"><small>${n}</small><b>LVL ${1+Math.floor(counts[k]/10)}</b><small>${counts[k]} заданий выполнено</small></div>`).join('');
  const done=s.tasks.filter(t=>isDone(t.id)).length;$('progress').textContent=`${done} / ${s.tasks.length}`;$('daybar').style.width=(s.tasks.length?done/s.tasks.length*100:0)+'%';
  const list=s.tasks.map(t=>`<label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label>`).join('')||'<div class="empty">Добавь первое задание.</div>';
- $('tasks').innerHTML=list;$('habitList').innerHTML=list;
+ $('tasks').innerHTML=list;
+ $('habitList').innerHTML=s.tasks.map(t=>`<div class="habit-row"><label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label><button type="button" class="delete-habit" data-delete-task="${esc(t.id)}" aria-label="Удалить привычку ${esc(t.name)}">Удалить</button></div>`).join('')||'<div class="empty">Добавь первое задание.</div>';
  document.querySelectorAll('[data-task]').forEach(el=>el.addEventListener('change',()=>toggle(el.dataset.task,el.checked)));
+ document.querySelectorAll('[data-delete-task]').forEach(el=>el.addEventListener('click',()=>removeTask(el.dataset.deleteTask)));
  $('goalList').innerHTML=s.goals.map((g,i)=>`<div class="goal row"><span>${esc(g)}</span><button class="secondary" data-goal="${i}">Удалить</button></div>`).join('')||'<div class="empty">Добавь цель, к которой хочешь двигаться.</div>';
  document.querySelectorAll('[data-goal]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту цель?')){s.goals.splice(+b.dataset.goal,1);persist()}});
  const inc=s.tx.filter(t=>t.kind==='income').reduce((a,t)=>a+t.amount,0),out=s.tx.filter(t=>t.kind!=='income').reduce((a,t)=>a+t.amount,0);
