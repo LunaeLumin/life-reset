@@ -10,6 +10,7 @@ const {KEY,UPGRADE_COPY,IMPORT_COPY,defaults}=require('../data.js');
 const {buildPreview,PREVIEW_KEY,CACHE_PREFIX,VERSION,PREVIEW_PATH,FILES}=require('../scripts/build-preview.cjs');
 const root=path.resolve(__dirname,'..');
 const oldRef='013f57cfd050a5bbf5d936ab44fda74fb5180d93';
+let networkUnavailable=false;
 let browser,server,base,temp,serveOld=false,stallNetwork=false;
 before(async()=>{
  temp=fs.mkdtempSync(path.join(os.tmpdir(),'life-reset-tests-'));
@@ -17,6 +18,7 @@ before(async()=>{
  const oldFiles=Object.fromEntries(['index.html','data.js','progression.js','sw.js','manifest.webmanifest','icon.svg'].map(name=>[name,execFileSync('git',['show',oldRef+':'+name],{cwd:root})]));
  buildPreview(root,path.join(temp,'preview'),execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim());
  server=https.createServer({key:fs.readFileSync(path.join(temp,'key.pem')),cert:fs.readFileSync(path.join(temp,'cert.pem'))},(req,res)=>{
+  if(networkUnavailable){req.socket.destroy();return}
   if(stallNetwork)return;
   const urlPath=new URL(req.url,'https://localhost').pathname,isPreview=urlPath.startsWith(PREVIEW_PATH);
   const filename=urlPath.slice(isPreview?PREVIEW_PATH.length:'/life-reset/'.length)||'index.html';
@@ -144,7 +146,8 @@ test('v0.5.0 service worker updates to current version and all assets load offli
  },'life-reset-v'+VERSION);
  await page.reload();await page.waitForFunction(version=>document.querySelector('header .eyebrow').textContent.includes(version),VERSION);
  assert.deepEqual(JSON.parse(await saved(page)),before);
- await context.setOffline(true);await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
+ // Use a real server connection failure during the worker handover; other scenarios cover browser airplane mode.
+ networkUnavailable=true;t.after(()=>{networkUnavailable=false});await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
  await page.locator('#tasks [data-task="move"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='40 XP');await page.reload();assert.equal(await page.locator('#xp').textContent(),'40 XP');assert.deepEqual(errors,[]);
 });
 test('preview and installed v0.5.0 share an origin without sharing data or offline caches',async t=>{
