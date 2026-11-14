@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101114"><meta name="description" content="Life Reset — личная операционная система">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Life Reset</title>
+<style>
+:root{color-scheme:dark;--bg:#101114;--panel:#191b20;--panel2:#22252c;--text:#f4f5f7;--muted:#9298a3;--line:#2b2f38;--accent:#d9f36a;--red:#ff8c8c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px calc(92px + env(safe-area-inset-bottom));max-width:760px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;padding:22px 2px 18px}h1{font-size:19px;letter-spacing:.13em;margin:0}.date{font-size:12px;color:var(--muted)}small,.muted{color:var(--muted)}main{display:grid;gap:14px}.view{display:none}.view.active{display:grid;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}.hero,.row,.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.hero{align-items:flex-start}.section-head{margin-bottom:12px}h2{font-size:16px;margin:0}.level{font-size:30px;font-weight:700;margin-top:5px}.xp{font-size:12px;color:var(--muted);text-align:right}.bar{height:7px;border-radius:8px;background:var(--panel2);overflow:hidden;margin-top:14px}.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.stat{background:var(--panel2);border-radius:13px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.task{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--line)}.task:first-of-type{border-top:0}.task input{appearance:none;width:21px;height:21px;border:1px solid #626976;border-radius:7px;flex:none}.task input:checked{background:var(--accent);border-color:var(--accent)}.task input:checked:after{content:"✓";display:block;color:#111;font-weight:800;text-align:center;line-height:19px}.task.done span{text-decoration:line-through;color:var(--muted)}
+button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;padding:11px 14px;font-weight:650;font-size:13px;cursor:pointer}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.danger{background:#3a2226;color:#ffb0b0;border:1px solid #684047}.nav{position:fixed;bottom:0;left:0;right:0;background:#14161bed;border-top:1px solid var(--line);display:flex;justify-content:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(16px);z-index:4}.nav-inner{display:flex;max-width:760px;width:100%;justify-content:space-around}.nav button{background:transparent;color:var(--muted);padding:8px 7px;font-weight:500}.nav button.active{color:var(--accent)}.field{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;margin:7px 0 12px;font:inherit}.goal,.tx{padding:12px 0;border-top:1px solid var(--line)}.goal:first-child,.tx:first-child{border:0}.hint{font-size:12px;color:var(--muted);line-height:1.5}.empty{color:var(--muted);font-size:13px;padding:12px 0}.pill{font-size:11px;padding:4px 8px;border-radius:99px;background:var(--panel2);color:var(--muted)}.split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{font-size:23px;font-weight:700;margin:6px 0}.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#e8f4b0;color:#15170f;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:10}.toast.show{opacity:1}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+@media(min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.2</span></header>
+<main>
+<section id="dashboard" class="view active">
+ <div class="card"><div class="hero"><div><div class="eyebrow">Твой уровень</div><div class="level" id="level">LVL 1</div></div><div class="xp"><b id="xp">0 XP</b><div id="toNext">до следующего уровня</div></div></div><div class="bar"><i id="xpbar"></i></div></div>
+ <div class="card"><div class="section-head"><h2>Характеристики</h2><span class="eyebrow">ПРОГРЕСС</span></div><div class="stats" id="stats"></div></div>
+ <div class="card"><div class="section-head"><h2>Задания на сегодня</h2><span class="eyebrow" id="progress">0 / 0</span></div><div id="tasks"></div><div class="bar"><i id="daybar"></i></div></div>
+ <div class="card"><div class="eyebrow">Фокус дня</div><p id="focusText">Стабильность важнее идеального дня.</p><button class="secondary" id="editFocus">Изменить фокус</button></div>
+</section>
+<section id="habits" class="view">
+ <div class="card"><div class="section-head"><h2>Привычки и задания</h2><button id="addTask" class="secondary">＋ Добавить</button></div><div id="habitList"></div><p class="hint">20 XP за выполнение. Опыт начисляется один раз за задание в день. Снятие отметки не отнимает уже заработанный XP.</p></div>
+</section>
+<section id="goals" class="view">
+ <div class="card"><div class="section-head"><h2>Цели</h2><button id="addGoal" class="secondary">＋ Добавить</button></div><div id="goalList"></div></div>
+</section>
+<section id="financeView" class="view">
+ <div class="card"><div class="eyebrow">Чистый баланс операций</div><div class="level" id="balance">0 ₸</div><div class="split"><div><small>Доходы</small><div class="metric" id="income">0 ₸</div></div><div><small>Расходы и долги</small><div class="metric" id="outgo">0 ₸</div></div></div></div>
+ <div class="card"><h2>Новая операция</h2><label class="hint">Тип операции</label><select class="field" id="kind"><option value="income">Доход</option><option value="expense">Расход</option><option value="debt">Погашение долга</option></select><label class="hint">Сумма, ₸</label><input class="field" id="amount" type="number" min="1" inputmode="decimal" placeholder="Например, 5000"><label class="hint">Комментарий</label><input class="field" id="note" placeholder="Зарплата, продукты..."><button id="saveTx">Сохранить операцию</button></div>
+ <div class="card"><div class="section-head"><h2>История операций</h2><span class="pill" id="txCount">0</span></div><div id="transactions"></div></div>
+</section>
+<section id="analytics" class="view">
+ <div class="card"><div class="eyebrow">Всего заработано</div><div class="level" id="totalXp">0 XP</div><small class="muted">Опыт не сгорает при смене дня</small></div>
+ <div class="card"><h2>Сводка</h2><div id="analyticsText" class="hint"></div></div>
+ <div class="card"><h2>Данные приложения</h2><p class="hint">Экспортируй резервную копию перед очисткой браузера или переносом на другое устройство.</p><div class="actions"><button id="export">Экспорт данных</button><button id="importBtn" class="secondary">Импорт копии</button><input id="importFile" type="file" accept="application/json" hidden></div><p class="hint" id="backupDate">Резервная копия ещё не создавалась.</p></div>
+ <div class="card"><h2>Управление</h2><div class="actions"><button id="resetChecks" class="secondary">Сбросить отметки сегодня</button><button id="resetAll" class="danger">Удалить все данные</button></div></div>
+</section>
+</main>
+<nav class="nav"><div class="nav-inner"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="habits">Привычки</button><button data-tab="goals">Цели</button><button data-tab="financeView">Финансы</button><button data-tab="analytics">Ещё</button></div></nav><div class="toast" id="toast"></div>
+<script>
+const KEY='life-reset-v2', CATS={health:'Здоровье',discipline:'Дисциплина',growth:'Развитие',finance:'Финансы'};
+const today=()=>new Date().toLocaleDateString('sv-SE');
+const defaults=()=>({version:2,xp:0,claimed:{},checks:{},tasks:[{id:'walk',name:'Пройти 7 000 шагов',cat:'health'},{id:'move',name:'15 минут движения',cat:'health'},{id:'learn',name:'30 минут обучения',cat:'growth'},{id:'read',name:'10 минут чтения',cat:'growth'},{id:'spend',name:'Записать расходы',cat:'finance'}],goals:[],tx:[],focus:'Стабильность важнее идеального дня.',backupAt:null});
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&x.version===2)return {...defaults(),...x}}catch(e){}return defaults()}
+let s=load();const $=id=>document.getElementById(id);const money=n=>Math.round(n).toLocaleString('ru-RU')+' ₸';
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(s));render()}catch(e){toast('Не удалось сохранить данные: память браузера заполнена')}}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
+function lvl(){return Math.floor(s.xp/500)+1}function isDone(id){return !!s.checks[today()]?.[id]}
+function toggle(id,on){s.checks[today()]??={};s.claimed[today()]??=[];if(on&&!s.claimed[today()].includes(id)){s.xp+=20;s.claimed[today()].push(id)}s.checks[today()][id]=on;persist();if(on)toast('+20 XP')}
+function render(){
+ $('today').textContent=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ $('level').textContent='LVL '+lvl();$('xp').textContent=s.xp+' XP';$('toNext').textContent=(500-s.xp%500)+' XP до уровня';$('xpbar').style.width=(s.xp%500)/5+'%';$('focusText').textContent=s.focus;
+ const counts={health:0,discipline:0,growth:0,finance:0};Object.entries(s.claimed).forEach(([d,ids])=>ids.forEach(id=>{const t=s.tasks.find(x=>x.id===id);if(t&&counts[t.cat]!==undefined)counts[t.cat]++}));
+ $('stats').innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="stat"><small>${n}</small><b>LVL ${1+Math.floor(counts[k]/10)}</b><small>${counts[k]} заданий выполнено</small></div>`).join('');
+ const done=s.tasks.filter(t=>isDone(t.id)).length;$('progress').textContent=`${done} / ${s.tasks.length}`;$('daybar').style.width=(s.tasks.length?done/s.tasks.length*100:0)+'%';
+ const list=s.tasks.map(t=>`<label class="task ${isDone(t.id)?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${isDone(t.id)?'checked':''}><span>${esc(t.name)} <small>· ${CATS[t.cat]||'Другое'}</small></span></label>`).join('')||'<div class="empty">Добавь первое задание.</div>';
+ $('tasks').innerHTML=list;$('habitList').innerHTML=list;
+ document.querySelectorAll('[data-task]').forEach(el=>el.addEventListener('change',()=>toggle(el.dataset.task,el.checked)));
+ $('goalList').innerHTML=s.goals.map((g,i)=>`<div class="goal row"><span>${esc(g)}</span><button class="secondary" data-goal="${i}">Удалить</button></div>`).join('')||'<div class="empty">Добавь цель, к которой хочешь двигаться.</div>';
+ document.querySelectorAll('[data-goal]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту цель?')){s.goals.splice(+b.dataset.goal,1);persist()}});
+ const inc=s.tx.filter(t=>t.kind==='income').reduce((a,t)=>a+t.amount,0),out=s.tx.filter(t=>t.kind!=='income').reduce((a,t)=>a+t.amount,0);
+ $('balance').textContent=money(inc-out);$('income').textContent=money(inc);$('outgo').textContent=money(out);$('txCount').textContent=s.tx.length;
+ $('transactions').innerHTML=s.tx.slice().reverse().map(t=>`<div class="tx row"><span>${esc(t.note||({income:'Доход',expense:'Расход',debt:'Погашение долга'}[t.kind]))}<small><br>${esc(t.date)} · ${{income:'Доход',expense:'Расход',debt:'Долг'}[t.kind]}</small></span><b>${t.kind==='income'?'+':'−'}${money(t.amount)}</b></div>`).join('')||'<div class="empty">Операций пока нет.</div>';
+ $('totalXp').textContent=s.xp+' XP';$('analyticsText').textContent=`Текущий уровень: ${lvl()}. Сегодня: ${done} из ${s.tasks.length} заданий. Всего целей: ${s.goals.length}. Финансовых операций: ${s.tx.length}. Баланс внесённых операций: ${money(inc-out)}.`;
+ $('backupDate').textContent=s.backupAt?'Последний экспорт: '+new Date(s.backupAt).toLocaleString('ru-RU'):'Резервная копия ещё не создавалась.';
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b))});
+$('addTask').onclick=()=>{const name=prompt('Название задания');if(!name?.trim())return;const cat=prompt('Категория: health, discipline, growth или finance','discipline')||'discipline';s.tasks.push({id:'t'+Date.now(),name:name.trim(),cat:CATS[cat]?cat:'discipline'});persist()};
+$('addGoal').onclick=()=>{const g=prompt('Название цели');if(g?.trim()){s.goals.push(g.trim());persist()}};
+$('editFocus').onclick=()=>{const f=prompt('Фокус на сегодня',s.focus);if(f?.trim()){s.focus=f.trim();persist()}};
+$('saveTx').onclick=()=>{const amount=Number($('amount').value);if(!Number.isFinite(amount)||amount<=0)return toast('Укажи корректную сумму');s.tx.push({id:'tx'+Date.now(),kind:$('kind').value,amount,note:$('note').value.trim(),date:today()});$('amount').value='';$('note').value='';persist();toast('Операция сохранена')};
+$('export').onclick=()=>{s.backupAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(s));const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='life-reset-backup-'+today()+'.json';a.click();URL.revokeObjectURL(url);render();toast('Резервная копия создана')};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(x.version!==2||!Array.isArray(x.tasks)||!Array.isArray(x.tx))throw Error();if(!confirm('Заменить текущие данные импортированной копией?'))return;s={...defaults(),...x};persist();toast('Данные восстановлены')}catch(err){toast('Файл не распознан как резервная копия Life Reset')}e.target.value=''};
+$('resetChecks').onclick=()=>{if(confirm('Сбросить сегодняшние отметки? Уже заработанный XP сохранится.')){delete s.checks[today()];persist()}};
+$('resetAll').onclick=()=>{if(confirm('Удалить ВСЕ данные приложения? Сначала экспортируй резервную копию.')){s=defaults();persist();toast('Данные удалены')}};
+render();
+if('serviceWorker'in navigator && location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
