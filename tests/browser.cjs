@@ -130,10 +130,18 @@ test('v0.4.1 service worker updates to current version and all scripts load offl
  const {page,context,errors}=await open(t,{serviceWorkers:'allow'});
  await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
  await page.locator('#tasks [data-task="walk"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='20 XP');
- const before=JSON.parse(await saved(page));serveOld=false;
+ const before=JSON.parse(await saved(page));
+ await page.evaluate(()=>{window.previousController=navigator.serviceWorker.controller});
+ serveOld=false;
  await page.evaluate(async()=>{const reg=await navigator.serviceWorker.ready;await reg.update()});
- await page.waitForFunction(async cache=>(await caches.keys()).includes(cache),'life-reset-v'+VERSION);
- await page.waitForFunction(async cache=>{const c=await caches.open(cache);return !!(await c.match('./progression.js'))},'life-reset-v'+VERSION);
+ await page.waitForFunction(async()=>{
+  const reg=await navigator.serviceWorker.getRegistration();
+  return reg.active?.state==='activated'&&navigator.serviceWorker.controller!==window.previousController&&navigator.serviceWorker.controller===reg.active;
+ });
+ await page.waitForFunction(async cache=>{
+  const c=await caches.open(cache),files=['./','./index.html','./data.js','./progression.js','./manifest.webmanifest','./icon.svg'];
+  return (await Promise.all(files.map(file=>c.match(file)))).every(Boolean);
+ },'life-reset-v'+VERSION);
  await page.reload();await page.waitForFunction(version=>document.querySelector('header .eyebrow').textContent.includes(version),VERSION);
  assert.deepEqual(JSON.parse(await saved(page)),before);
  await context.setOffline(true);await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
