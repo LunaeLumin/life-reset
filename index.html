@@ -19,11 +19,11 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 @media(prefers-reduced-motion:reduce){.level-up .avatar-button{animation:none}.bar>i{transition:none}}
 @media(min-width:360px){.avatar-button{width:64px;height:64px}}
 @media(min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
-.habit-name{background:none;color:var(--text);padding:4px 0;text-align:left;flex:1;min-width:0;overflow-wrap:anywhere;font-weight:400;min-height:44px}.habit-name small{display:block;color:var(--muted)}.habit-row{flex-wrap:wrap}.habit-row .task{flex-basis:60%}.goal{display:block}.goal-controls{display:flex;gap:8px;margin-top:12px}.goal-controls button{min-height:44px}.goal-name{width:100%;background:transparent;border:0;padding:8px 0;overflow-wrap:anywhere}.effort-row{padding:14px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}dialog{overflow-y:auto}.field{font-size:16px}.weekday-picker label{min-height:44px;min-width:32px}.view,.card{min-width:0}
+.habit-name{background:none;color:var(--text);padding:4px 0;text-align:left;flex:1;min-width:0;overflow-wrap:anywhere;font-weight:400;min-height:44px}.habit-name small{display:block;color:var(--muted)}.habit-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:8px;padding-bottom:12px}.habit-row .task{grid-column:1/-1}.habit-row>.edit-habit,.habit-row>.delete-action{width:100%;min-height:44px}.goal{display:block}.goal-controls{display:flex;gap:8px;margin-top:12px}.goal-controls button{min-height:44px}.goal-name{font-family:inherit;font-size:16px;font-weight:600;line-height:1.45;color:var(--text);width:100%;background:transparent;border:0;padding:8px 0;overflow-wrap:anywhere}.effort-row{padding:14px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}dialog{overflow-y:auto}.field{font-size:16px}.weekday-picker label{min-height:44px;min-width:32px}.view,.card{min-width:0}
 </style>
 </head>
 <body>
-<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.8.0</span></header>
+<header><div><h1>LIFE RESET</h1><div class="date" id="today"></div></div><span class="eyebrow">PERSONAL OS · 0.8.1</span></header>
 <main>
 <div id="dataWarning" class="card" role="alert" hidden><p>Не удалось прочитать сохранённые данные. Исходная запись сохранена без изменений. Скачай её для восстановления или импортируй исправную копию в разделе «Ещё».</p><button id="exportOriginal" class="secondary">Скачать исходную запись</button></div>
 <section id="dashboard" class="view active">
@@ -55,10 +55,8 @@ button,.btn{background:var(--accent);color:#15170f;border:0;border-radius:12px;p
 </main>
 <dialog id="goalDialog" aria-labelledby="goalTitle"><form id="goalForm">
 <h2 id="goalTitle">Цель</h2><label for="goalName">Название</label><input class="field" id="goalName" maxlength="200" required>
+<label for="goalStart">Дата начала</label><input class="field" id="goalStart" type="date" required>
 <label for="goalDue">Срок окончания (необязательно)</label><input class="field" id="goalDue" type="date">
-<label for="goalTarget">Сколько небольших шагов нужно сделать?</label><input class="field" id="goalTarget" type="number" min="1" max="1000000" value="10" required>
-<label for="goalDone">Уже выполнено шагов</label><input class="field" id="goalDone" type="number" min="0" value="0" required>
-<p class="hint">Шаг — небольшое действие на пути к цели. Например, одна тренировка или одна прочитанная глава.</p>
 <div class="dialog-actions"><button class="secondary" type="button" id="cancelGoal">Отмена</button><button type="submit">Сохранить</button></div></form></dialog>
 <dialog id="taskDialog" aria-labelledby="taskDialogTitle">
  <form id="taskForm">
