@@ -16,9 +16,9 @@ function legacy(){
 }
 test('v2 retains earned XP, categories, focus, goals, money and unknown metadata',()=>{
  const raw={...legacy(),custom:{keep:true}};const next=normalize(raw);
- assert.equal(next.version,3);assert.equal(next.xp,120);assert.equal(next.legacyXp,100);
- assert.equal(next.legacyCounts.health,1);assert.equal(next.focus,raw.focus);
- for(const key of ['checks','claimed','goals','tx','custom'])assert.deepEqual(next[key],raw[key]);
+ assert.equal(next.version,4);assert.equal(next.xp,120);assert.equal(next.legacyXp,100);
+ assert.equal(next.legacyCounts.sport,1);assert.equal(next.focus,raw.focus);
+ for(const key of ['checks','claimed','tx','custom'])assert.deepEqual(next[key],raw[key]);
  assert.deepEqual(normalize(next),next);assert.equal(raw.version,2);
  next.checks['2026-11-15']={walk:true};assert.equal(normalize(next).xp,140);
 });
@@ -28,7 +28,7 @@ test('current v3 XP is derived from checked tasks without changing history',()=>
 });
 test('invalid backup contents are rejected completely',()=>{
  const mutations=[
-  x=>x.version=4,x=>x.tasks=[null],x=>x.tasks.push(copy(x.tasks[0])),
+  x=>x.version=99,x=>x.tasks=[null],x=>x.tasks.push(copy(x.tasks[0])),
   x=>x.tasks[0].id='__proto__',x=>x.tasks[0].cat='toString',x=>x.tasks[0].name='',
   x=>x.goals=[null],x=>x.checks=[],x=>x.checks={'2026-02-30':{walk:true}},
   x=>x.checks={'2026-11-14':{walk:'yes'}},x=>x.tx=[null],
@@ -37,7 +37,7 @@ test('invalid backup contents are rejected completely',()=>{
   x=>x.tx=[{id:'tx1',kind:'expense',amount:-10,date:'2026-11-14'}],
   x=>x.tx=[{id:'tx1',kind:'income',amount:100,date:'yesterday'}],
   x=>x.focusIndex=-1,x=>x.backupAt='invalid',x=>x.focus={bad:true},
-  x=>x.legacyXp=-1,x=>x.legacyCounts={health:-1},x=>x.claimed={'2026-11-14':null},
+  x=>x.legacyXp=-1,x=>x.legacyCounts={sport:-1},x=>x.claimed={'2026-11-14':null},
  ];
  for(const mutation of mutations){const x=defaults();mutation(x);assert.throws(()=>normalize(x),undefined,mutation.toString())}
 });
@@ -81,7 +81,7 @@ test('import stores an exact pre-import copy, including damaged original bytes',
  for(const raw of [JSON.stringify(legacy()),'{broken']){
   const {store,storage}=setup(raw);const replacement=defaults();replacement.goals=['Восстановленная цель'];
   await store.update(()=>{}, {replacement,expectedRaw:raw});
-  assert.equal(storage.getItem(IMPORT_COPY),raw);assert.deepEqual(store.read().data.goals,replacement.goals);
+  assert.equal(storage.getItem(IMPORT_COPY),raw);assert.deepEqual(store.read().data.goals.map(g=>g.name),replacement.goals);
  }
 });
 test('invalid replacement and backup failure leave main data intact',async()=>{
@@ -93,7 +93,7 @@ test('invalid replacement and backup failure leave main data intact',async()=>{
 test('concurrent actions reread the latest data while holding a shared lock',async()=>{
  const {store,storage}=setup();const second=new Store({storage,lock:store.lock});
  await Promise.all([store.update(s=>{s.goals.push('Цель')}),second.update(s=>{s.tx.push({id:'tx',kind:'income',amount:100,date:'2026-11-14'})})]);
- assert.deepEqual(store.read().data.goals,['Цель']);assert.equal(store.read().data.tx.length,1);
+ assert.deepEqual(store.read().data.goals.map(g=>g.name),['Цель']);assert.equal(store.read().data.tx.length,1);
 });
 test('stale import and destructive actions fail without overwriting newer data',async()=>{
  const {store,storage}=setup();await store.update(s=>{s.goals.push('Новая цель')});const saved=storage.getItem(KEY);
@@ -128,5 +128,10 @@ test('recovery from corruption uses the captured fence; later writes cancel that
  assert.equal(storage.getItem(IMPORT_COPY),'{broken');
  const stale=await store.capture();await store.update(s=>{s.goals.push('Не терять')});
  await assert.rejects(store.update(()=>{}, {replacement:defaults(),expectedRaw:stale.raw,expectedToken:stale.token}),e=>e.code==='conflict');
- assert.deepEqual(store.read().data.goals,['Не терять']);
+ assert.deepEqual(store.read().data.goals.map(g=>g.name),['Не терять']);
+});
+test('v3 migration preserves the exact original before a v4 write and rejects invalid new fields',async()=>{
+ const {FEATURE_COPY}=require('../data.js');const old={...defaults(),version:3,goals:['Две одинаковые','Две одинаковые'],gender:undefined};old.tasks[0].cat='health';delete old.tasks[0].days;old.checks={'2026-11-13':{walk:true}};old.xp=20;const raw=JSON.stringify(old),{store,storage}=setup(raw);
+ assert.equal(store.read().data.version,4);assert.equal(storage.getItem(KEY),raw);await store.update(n=>{n.gender='female'});assert.equal(storage.getItem(FEATURE_COPY),raw);assert.equal(store.read().data.xp,20);assert.equal(new Set(store.read().data.goals.map(g=>g.id)).size,2);
+ for(const bad of [n=>n.gender='other',n=>n.tasks[0].days=[],n=>n.tasks[0].days=[1,1],n=>n.legacyCounts={health:'2'},n=>n.goals=[{id:'g',name:'x',created:'2026-11-14',due:'2026-11-13',target:10,done:1}]]){const n=defaults();bad(n);assert.throws(()=>normalize(n))}
 });

@@ -50,11 +50,11 @@ test('habit XP, custom category, goals, money, reload and backup roundtrip',asyn
  await walk.uncheck();await page.waitForFunction(()=>document.getElementById('xp').textContent==='0 XP');
  await walk.check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='20 XP');
  await page.locator('[data-tab="habits"]').click();await page.locator('#addTask').click();
- await page.locator('#taskName').fill('Сон <8 часов>');await page.locator('#taskCategory').selectOption('discipline');
+ await page.locator('#taskName').fill('Сон <8 часов>');await page.locator('#taskCategory').selectOption('intellect');
  await page.locator('#taskForm [type="submit"]').click();await toast(page,'Привычка добавлена');
- await page.locator('[data-tab="goals"]').click();page.once('dialog',d=>d.accept('Моя цель'));await page.locator('#addGoal').click();await toast(page,'Цель добавлена');
- await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('100.25');await page.locator('#note').fill('Доход');await page.locator('#saveTx').click();await toast(page,'Операция сохранена');
- await page.reload();let data=JSON.parse(await saved(page));assert.equal(data.xp,20);assert.equal(data.tasks.at(-1).cat,'discipline');assert.deepEqual(data.goals,['Моя цель']);assert.equal(data.tx[0].amount,100.25);
+ await page.locator('[data-tab="goals"]').click();await page.locator('#addGoal').click();await page.locator('#goalName').fill('Моя цель');await page.locator('#goalForm [type=submit]').click();await toast(page,'Цель добавлена');
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('100.25');await page.locator('#note').fill('Доход');await page.locator('#saveTx').click();await toast(page,'Операция сохранена');
+ await page.reload();let data=JSON.parse(await saved(page));assert.equal(data.xp,20);assert.equal(data.tasks.at(-1).cat,'intellect');assert.deepEqual(data.goals.map(g=>g.name),['Моя цель']);assert.equal(data.tx[0].amount,100.25);
  await page.locator('[data-tab="analytics"]').click();const pending=page.waitForEvent('download');await page.locator('#export').click();
  const download=await pending;const dest=path.join(temp,'roundtrip.json');await download.saveAs(dest);data=JSON.parse(fs.readFileSync(dest));
  await page.waitForFunction(()=>!document.getElementById('export').disabled&&JSON.parse(localStorage.getItem('life-reset-v2')).backupAt!==null);
@@ -79,27 +79,27 @@ test('damaged storage remains intact and can be downloaded or safely replaced',a
 test('quota failure retains form input, leaves state intact, and does not claim success',async t=>{
  const raw=JSON.stringify(defaults()),{page}=await open(t,{raw});
  await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
- await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('500');await page.locator('#note').fill('Важный ввод');await page.locator('#saveTx').click();await toast(page,'Не удалось сохранить');
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('500');await page.locator('#note').fill('Важный ввод');await page.locator('#saveTx').click();await toast(page,'Не удалось сохранить');
  assert.equal(await page.locator('#amount').inputValue(),'500');assert.equal(await page.locator('#note').inputValue(),'Важный ввод');assert.equal(await saved(page),raw);
  assert.equal(await page.locator('#txCount').textContent(),'0');assert.equal(await page.locator('#saveTx').isEnabled(),true);
  await page.locator('[data-tab="analytics"]').click();const pending=page.waitForEvent('download');await page.locator('#export').click();await pending;
 });
 test('failed task save keeps the dialog, name and category',async t=>{
  const {page}=await open(t);await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
- await page.locator('[data-tab="habits"]').click();await page.locator('#addTask').click();await page.locator('#taskName').fill('Моя привычка');await page.locator('#taskCategory').selectOption('health');
+ await page.locator('[data-tab="habits"]').click();await page.locator('#addTask').click();await page.locator('#taskName').fill('Моя привычка');await page.locator('#taskCategory').selectOption('sport');
  await page.locator('#taskForm [type="submit"]').click();await toast(page,'Не удалось сохранить');
- assert.equal(await page.locator('#taskDialog').isVisible(),true);assert.equal(await page.locator('#taskName').inputValue(),'Моя привычка');assert.equal(await page.locator('#taskCategory').inputValue(),'health');
+ assert.equal(await page.locator('#taskDialog').isVisible(),true);assert.equal(await page.locator('#taskName').inputValue(),'Моя привычка');assert.equal(await page.locator('#taskCategory').inputValue(),'sport');
 });
 test('unavailable write coordination leaves user input and original data intact',async t=>{
  const raw=JSON.stringify(defaults()),{page}=await open(t,{raw});
  await page.evaluate(()=>Object.defineProperty(window,'indexedDB',{value:undefined}));
- await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('500');await page.locator('#saveTx').click();await toast(page,'Не удалось сохранить');
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('500');await page.locator('#saveTx').click();await toast(page,'Не удалось сохранить');
  assert.equal(await page.locator('#amount').inputValue(),'500');assert.equal(await saved(page),raw);
 });
 test('fence storage failure happens before the primary write and a later retry succeeds',async t=>{
  const raw=JSON.stringify(defaults()),{page}=await open(t,{raw});
  await page.evaluate(()=>{window.originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('quota','QuotaExceededError')}});
- await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('500');await page.locator('#saveTx').click();await toast(page,'Не удалось сохранить');
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('500');await page.locator('#saveTx').click();await toast(page,'Не удалось сохранить');
  assert.equal(await saved(page),raw);assert.equal(await page.locator('#amount').inputValue(),'500');
  await page.evaluate(()=>IDBObjectStore.prototype.put=window.originalPut);await page.locator('#saveTx').click();await toast(page,'Операция сохранена');
  assert.equal(JSON.parse(await saved(page)).tx.length,1);
@@ -119,12 +119,12 @@ test('import detects changes made while its file is being read',async t=>{
  await page.evaluate(()=>{const original=File.prototype.text;File.prototype.text=async function(){await new Promise(resolve=>{window.finishRead=resolve});return original.call(this)}});
  const importing=importFile(page,defaults());await page.waitForFunction(()=>typeof window.finishRead==='function');
  await second.evaluate(()=>persist(next=>{next.goals.push('Сохранить эту цель')}));
- page.once('dialog',d=>d.accept());await page.evaluate(()=>window.finishRead());await importing;await toast(page,'Данные изменились');assert.deepEqual(JSON.parse(await saved(page)).goals,['Сохранить эту цель']);
+ page.once('dialog',d=>d.accept());await page.evaluate(()=>window.finishRead());await importing;await toast(page,'Данные изменились');assert.deepEqual(JSON.parse(await saved(page)).goals.map(g=>g.name),['Сохранить эту цель']);
 });
 test('legacy upgrade keeps XP and focus and exposes its exact source copy',async t=>{
  const legacy={...defaults(),version:2,xp:120,focus:'Мой фокус',checks:{'2026-11-14':{walk:true}},claimed:{'2026-11-13':['walk']}};
  const raw=JSON.stringify(legacy),{page}=await open(t,{raw});assert.equal(await page.locator('#xp').textContent(),'120 XP');assert.equal(await page.locator('#focusText').textContent(),'Мой фокус');
- await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('100');await page.locator('#saveTx').click();await toast(page,'Операция сохранена');
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();await page.locator('#amount').fill('100');await page.locator('#saveTx').click();await toast(page,'Операция сохранена');
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),UPGRADE_COPY),raw);assert.equal(JSON.parse(await saved(page)).xp,120);
  await page.locator('[data-tab="analytics"]').click();assert.equal(await page.locator('#exportBeforeUpgrade').isVisible(),true);
 });
@@ -142,7 +142,7 @@ test('v0.6.0 service worker updates to current version and all assets load offli
   return reg.active?.state==='activated'&&navigator.serviceWorker.controller!==window.previousController&&navigator.serviceWorker.controller===reg.active;
  });
  await page.waitForFunction(async cache=>{
-  const c=await caches.open(cache),files=['./','./index.html','./data.js','./progression.js','./avatar.css','./avatar-component.js','./avatar-demo.html','./history.css','./history.js','./manifest.webmanifest','./icon.svg'];
+  const c=await caches.open(cache),files=['./features.js','./','./index.html','./data.js','./progression.js','./avatar.css','./avatar-component.js','./avatar-demo.html','./history.css','./history.js','./manifest.webmanifest','./icon.svg'];
   return (await Promise.all(files.map(file=>c.match(file)))).every(Boolean);
  },'life-reset-v'+VERSION);
  await page.reload();await page.waitForFunction(version=>document.querySelector('header .eyebrow').textContent.includes(version),VERSION);
@@ -153,7 +153,7 @@ test('v0.6.0 service worker updates to current version and all assets load offli
 });
 test('preview and installed v0.6.0 share an origin without sharing data or offline caches',async t=>{
  serveOld=true;t.after(()=>{serveOld=false});
- const original={...defaults(),checks:{'2026-11-14':{walk:true}},xp:20,goals:['Основная цель'],tx:[{id:'original',kind:'income',amount:2500,date:'2026-11-14'}]};
+ const original={...JSON.parse(execFileSync('node',['-e',execFileSync('git',['show',oldRef+':data.js'],{cwd:root,encoding:'utf8'})+';console.log(JSON.stringify(module.exports.defaults()))'],{encoding:'utf8'})),checks:{'2026-11-14':{walk:true}},xp:20,goals:['Основная цель'],tx:[{id:'original',kind:'income',amount:2500,date:'2026-11-14'}]};
  const raw=JSON.stringify(original),{page:production,context}=await open(t,{raw,serviceWorkers:'allow'});
  await production.evaluate(()=>navigator.serviceWorker.ready);await production.reload();
  await production.waitForFunction(()=>!!navigator.serviceWorker.controller);
@@ -163,7 +163,7 @@ test('preview and installed v0.6.0 share an origin without sharing data or offli
  assert.equal(await preview.locator('#xp').textContent(),'0 XP');assert.equal(await preview.locator('#previewNotice').isVisible(),true);
  const manifest=await preview.evaluate(async()=>await (await fetch('manifest.webmanifest')).json());assert.equal(manifest.short_name,'LR Тест');
  preview.once('dialog',d=>d.accept());await importFile(preview,original);await toast(preview,'Данные восстановлены');
- await preview.locator('[data-tab="financeView"]').click();await preview.locator('#amount').fill('50');await preview.locator('#saveTx').click();await toast(preview,'Операция сохранена');
+ await preview.locator('[data-tab="analytics"]').click();await preview.locator('[data-tab="financeView"]').click();await preview.locator('#amount').fill('50');await preview.locator('#saveTx').click();await toast(preview,'Операция сохранена');
  assert.equal(await saved(production),raw);
  assert.equal(await preview.evaluate(key=>JSON.parse(localStorage.getItem(key)).tx.length,PREVIEW_KEY),2);
  const keys=await preview.evaluate(()=>caches.keys());assert.ok(keys.includes('life-reset-v0.6.0'));assert.ok(keys.includes(CACHE_PREFIX+'v1'));
@@ -185,23 +185,23 @@ test('cancelling habit deletion on a touch screen restores the initial button co
 test('existing income, expense and debt entries can be removed individually even with duplicate IDs',async t=>{
  const data=defaults();data.goals=['Старая цель'];data.checks={'2026-11-13':{walk:true}};data.xp=20;
  data.tx=[{id:'old',kind:'income',amount:5000,date:'2026-11-13',note:'Старый доход'},{id:'old',kind:'expense',amount:1000,date:'2026-11-13',note:'Старый расход'},{id:'debt',kind:'debt',amount:500,date:'2026-11-13'}];
- const raw=JSON.stringify(data),{page}=await open(t,{raw});await page.locator('[data-tab="financeView"]').click();
+ const raw=JSON.stringify(data),{page}=await open(t,{raw});await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();
  const balance=async()=> (await page.locator('#balance').textContent()).replace(/\s/g,'');
  assert.equal(await balance(),'3500₸');page.once('dialog',d=>d.dismiss());await page.locator('[data-delete-tx="1"]').tap();assert.equal(await saved(page),raw);
  page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="1"]').click();await toast(page,'Операция удалена');assert.equal(await balance(),'4500₸');
- await page.reload();const remaining=JSON.parse(await saved(page));assert.deepEqual(remaining.tx,[data.tx[0],data.tx[2]]);assert.deepEqual(remaining.goals,data.goals);assert.deepEqual(remaining.checks,data.checks);assert.equal(remaining.xp,20);
- await page.locator('[data-tab="financeView"]').click();page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await toast(page,'Операция удалена');assert.equal(await balance(),'-500₸');
+ await page.reload();const remaining=JSON.parse(await saved(page));assert.deepEqual(remaining.tx,[data.tx[0],data.tx[2]]);assert.deepEqual(remaining.goals.map(g=>g.name),data.goals);assert.deepEqual(remaining.checks,data.checks);assert.equal(remaining.xp,20);
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await toast(page,'Операция удалена');assert.equal(await balance(),'-500₸');
  page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await page.waitForFunction(()=>document.getElementById('txCount').textContent==='0');assert.equal(await balance(),'0₸');
  assert.equal(await page.locator('#transactions .empty').isVisible(),true);
 });
 test('financial deletion retains the row and balance if saving fails',async t=>{
  const data=defaults();data.tx=[{id:'old',kind:'income',amount:500,date:'2026-11-13'}];const raw=JSON.stringify(data),{page}=await open(t,{raw});
- await page.locator('[data-tab="financeView"]').click();await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}});
  page.once('dialog',d=>d.accept());await page.locator('[data-delete-tx="0"]').click();await toast(page,'Не удалось сохранить');assert.equal(await saved(page),raw);assert.equal(await page.locator('[data-delete-tx]').count(),1);assert.equal(await page.locator('#balance').textContent(),'500 ₸');
 });
 test('financial deletion rejects a changed snapshot while confirmation is open',async t=>{
  const data=defaults();data.tx=[{id:'old',kind:'income',amount:500,date:'2026-11-13'}];const {page,context}=await open(t,{raw:JSON.stringify(data)}),second=await context.newPage();await second.goto(base);
- await page.locator('[data-tab="financeView"]').click();
+ await page.locator('[data-tab="analytics"]').click();await page.locator('[data-tab="financeView"]').click();
  page.once('dialog',async d=>{await second.evaluate(()=>persist(next=>{next.tx.push({id:'new',kind:'expense',amount:100,date:'2026-11-14'})}));await d.accept()});
  await page.locator('[data-delete-tx="0"]').click();await toast(page,'Данные изменились');const stored=JSON.parse(await saved(page));assert.equal(stored.tx.length,2);assert.deepEqual(stored.tx[0],data.tx[0]);
 });
@@ -309,4 +309,22 @@ test('history uses the phone local date rather than the UTC date',async t=>{
 });
 test('history works offline and keeps the source data intact',async t=>{
  const raw=JSON.stringify(historyData()),{page,context}=await open(t,{raw,fixedTime:historyTime,serviceWorkers:'allow'});await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>navigator.serviceWorker.controller?.state==='activated');await context.setOffline(true);await page.reload();await showHistory(page);assert.equal(await page.locator('[data-history-count]').textContent(),'4');await page.locator('[data-history-mode="year"]').click();await page.locator('[data-history-prev]').click();assert.equal(await page.locator('[data-history-count]').textContent(),'1');assert.equal(await saved(page),raw);
+});
+test('habit schedules save selected weekdays and editing preserves its completion history',async t=>{
+ const data=defaults();data.checks={'2026-11-14':{walk:true}};data.xp=20;const {page,errors}=await open(t,{raw:JSON.stringify(data),fixedTime:historyTime});await page.locator('[data-tab="habits"]').click();await page.locator('#addTask').click();
+ await page.locator('#taskName').fill('Только суббота');await page.locator('#taskCategory').selectOption('sport');for(const day of await page.locator('#taskForm [data-weekday]').all())await day.uncheck();await page.locator('#taskForm [data-weekday][value="6"]').check();await page.locator('#taskForm [type="submit"]').click();await toast(page,'Привычка добавлена');
+ const habit=page.locator('#habitList [data-task="'+await page.evaluate(()=>JSON.parse(localStorage.getItem('life-reset-v2')).tasks.at(-1).id)+'"]');assert.equal(await habit.count(),1);assert.ok(await page.locator('#tasks').textContent().then(t=>t.includes('Только суббота')));
+ await page.locator('#habitList [data-edit-task]').last().click();await page.locator('#taskName').fill('Субботняя прогулка');await page.locator('#taskForm [type="submit"]').click();await toast(page,'Привычка изменена');const stored=JSON.parse(await saved(page));assert.deepEqual(stored.tasks.at(-1).days,[6]);assert.equal(stored.checks['2026-11-14'].walk,true);assert.deepEqual(errors,[]);
+});
+test('legacy categories migrate to sport, intellect and nutrition without changing checks or XP',async t=>{
+ const data=defaults();data.tasks[0].cat='health';data.tasks[2].cat='growth';data.tasks[4].cat='finance';data.checks={'2026-11-13':{walk:true,learn:true,spend:true}};data.xp=60;const raw=JSON.stringify(data),{page}=await open(t,{raw,fixedTime:historyTime});
+ assert.ok((await page.locator('#tasks').textContent()).includes('Спорт'));assert.ok((await page.locator('#tasks').textContent()).includes('Интеллект'));assert.equal((await saved(page)),raw);
+ await page.locator('[data-tab="habits"]').click();await page.locator('#addTask').click();await page.locator('#taskName').fill('Новое');await page.locator('#taskForm [type="submit"]').click();await toast(page,'Привычка добавлена');const next=JSON.parse(await saved(page));assert.deepEqual(next.tasks.slice(0,5).map(t=>t.cat),['sport','sport','intellect','intellect','intellect']);assert.equal(next.checks['2026-11-13'].walk,true);assert.equal(next.xp,60);
+});
+test('goal deadlines, small steps, editing and character selection survive reload without extra XP',async t=>{
+ const {page,errors}=await open(t,{fixedTime:historyTime});await page.locator('[data-tab="goals"]').click();await page.locator('#addGoal').click();await page.locator('#goalName').fill('Прочитать книгу');await page.locator('#goalDue').fill('2026-11-24');await page.locator('#goalTarget').fill('5');await page.locator('#goalForm [type=submit]').click();await toast(page,'Цель добавлена');assert.ok((await page.locator('#goalList').textContent()).includes('10 дн.'));
+ await page.locator('[data-goal-step]').click();await toast(page,'Ещё один');assert.equal(await page.locator('#goalList [role=progressbar]').getAttribute('aria-valuenow'),'1');await page.locator('[data-goal-edit]').click();await page.locator('#goalName').fill('Читать по главе');await page.locator('#goalForm [type=submit]').click();await toast(page,'Цель изменена');
+ await page.locator('[data-tab="dashboard"]').click();assert.equal(await page.locator('#dashboard #stats').count(),0);await page.locator('#avatarButton').click();await page.locator('#gender').selectOption('female');await toast(page,'Персонаж обновлён');assert.equal(await page.locator('#avatarDetail svg').getAttribute('data-gender'),'female');await page.locator('#closeStageDialog').click();await page.reload();assert.equal(await page.locator('#avatarButton svg').getAttribute('data-gender'),'female');
+ await page.locator('[data-tab="progressView"]').click();assert.ok((await page.locator('#effortSummary').textContent()).includes('Шагов к целям: 1'));assert.equal(JSON.parse(await saved(page)).xp,0);await page.locator('[data-tab="dashboard"]').click();await page.locator('#tasks [data-task="walk"]').check();await toast(page,'+20 XP');await page.locator('[data-tab="progressView"]').click();assert.ok((await page.locator('#effortSummary').textContent()).includes('1 маленькие действия'));assert.deepEqual(errors,[]);
+ for(const width of [320,375,390,430]){await page.setViewportSize({width,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
 });

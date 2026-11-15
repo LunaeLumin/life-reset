@@ -33,3 +33,5 @@
 @keyframes game-avatar-flash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}@keyframes game-avatar-pulse{0%,100%{transform:scale(1)}40%{transform:scale(1.04)}}@keyframes game-avatar-notice{0%{opacity:0;transform:translate(-50%,-40%)}15%,75%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-60%)}}
 @media(hover:hover) and (pointer:fine){.game-avatar__controls button:hover,.game-avatar__stages button:hover{filter:brightness(1.12)}}
 @media(prefers-reduced-motion:reduce){.human-avatar *,.game-avatar *{transition:none!important;animation:none!important}.game-avatar.is-level-up .game-avatar__up{opacity:1}}
+
+.human-avatar .female-hair{opacity:0;transition:opacity .45s ease}.human-avatar[data-gender="female"] .female-hair{opacity:1}.human-avatar[data-gender="female"] .male-hair{opacity:0}.human-avatar[data-gender="female"] .avatar-torso{transform:scaleX(calc(var(--torso-scale)*.9))}.human-avatar[data-gender="female"] .avatar-arm-left{transform:translate(var(--arm-left),8px) scaleX(calc(var(--arm-scale)*.9))}.human-avatar[data-gender="female"] .avatar-arm-right{transform:translate(var(--arm-right),8px) scaleX(calc(var(--arm-scale)*.9))}

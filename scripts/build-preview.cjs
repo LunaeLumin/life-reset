@@ -7,7 +7,7 @@ const VERSION=require('../package.json').version;
 const PREVIEW_KEY='lr-preview-'+VERSION;
 const CACHE_PREFIX=PREVIEW_KEY+'-';
 const PREVIEW_PATH='/life-reset/preview/'+VERSION+'/';
-const FILES=['index.html','data.js','progression.js','avatar.css','avatar-component.js','avatar-demo.html','history.css','history.js','sw.js','manifest.webmanifest','icon.svg'];
+const FILES=['index.html','data.js','progression.js','avatar.css','avatar-component.js','avatar-demo.html','history.css','history.js','features.js','sw.js','manifest.webmanifest','icon.svg'];
 
 function replaceOnce(text,from,to){
  if(text.split(from).length!==2)throw new Error('Preview source changed: '+from);
