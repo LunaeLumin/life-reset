@@ -6,7 +6,7 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
-const {KEY,UPGRADE_COPY,IMPORT_COPY,defaults,progress}=require('../data.js');
+const {KEY,UPGRADE_COPY,IMPORT_COPY,defaults,progress,newPenalty}=require('../data.js');
 const {buildPreview,PREVIEW_KEY,CACHE_PREFIX,VERSION,PREVIEW_PATH,FILES}=require('../scripts/build-preview.cjs');
 const root=path.resolve(__dirname,'..');
 const oldRef='883c9e4834e22d5fb70995526835de5c68f05c2d';
@@ -37,8 +37,8 @@ async function open(t,{raw,fallback=false,serviceWorkers='block',reducedMotion,f
  if(fallback)await context.addInitScript(()=>Object.defineProperty(navigator,'locks',{value:undefined}));
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  if(fixedTime)await page.clock.install({time:new Date(fixedTime)});
- await page.goto(base);
- if(raw!==undefined){await page.evaluate(({key,raw})=>localStorage.setItem(key,raw),{key:KEY,raw});await page.reload()}
+ if(raw!==undefined)await context.addInitScript(({key,raw})=>{if(!sessionStorage.getItem('fixture-seeded')){localStorage.setItem(key,raw);sessionStorage.setItem('fixture-seeded','yes')}},{key:KEY,raw});
+ await page.goto(base);if(!serveOld)await page.waitForFunction(()=>typeof syncingPenalties!=='undefined'&&!syncingPenalties);
  return {context,page,errors};
 }
 async function saved(page){return page.evaluate(key=>localStorage.getItem(key),KEY)}
@@ -146,7 +146,7 @@ test('v0.6.0 service worker updates to current version and all assets load offli
   return (await Promise.all(files.map(file=>c.match(file)))).every(Boolean);
  },'life-reset-v'+VERSION);
  await page.reload();await page.waitForFunction(version=>document.querySelector('header .eyebrow').textContent.includes(version),VERSION);
- assert.deepEqual(JSON.parse(await saved(page)),before);
+ assert.deepEqual(JSON.parse(await saved(page)).checks,before.checks);assert.equal(JSON.parse(await saved(page)).xp,before.xp);assert.equal(await page.evaluate(()=>localStorage.getItem('life-reset-v2-before-0.9.0')),JSON.stringify(before));
  // Use a real server connection failure during the worker handover; other scenarios cover browser airplane mode.
  networkUnavailable=true;t.after(()=>{networkUnavailable=false});await page.reload();assert.equal(await page.locator('#xp').textContent(),'20 XP');
  await page.locator('#tasks [data-task="move"]').check();await page.waitForFunction(()=>document.getElementById('xp').textContent==='40 XP');await page.reload();assert.equal(await page.locator('#xp').textContent(),'40 XP');assert.deepEqual(errors,[]);
@@ -300,9 +300,9 @@ test('imported backups immediately supply habit history',async t=>{
  const {page}=await open(t,{raw:JSON.stringify({...defaults(),tasks:[]}),fixedTime:historyTime});await showHistory(page);page.once('dialog',d=>d.accept());await importFile(page,historyData());await toast(page,'Данные восстановлены');await showHistory(page);assert.equal(await page.locator('[data-history-count]').textContent(),'4');await page.locator('[data-history-mode="year"]').click();await page.locator('[data-history-prev]').click();assert.equal(await page.locator('[data-history-count]').textContent(),'1');
 });
 test('history follows the local month change at midnight without modifying saved marks',async t=>{
- const data=defaults();data.checks={'2026-11-30':{walk:true}};data.xp=20;const raw=JSON.stringify(data),{page}=await open(t,{raw,fixedTime:'2026-11-30T18:59:58Z'});await showHistory(page);assert.equal(await page.locator('[data-history-count]').textContent(),'1');
+ const data=defaults();data.checks={'2026-11-30':{walk:true}};data.xp=20;data.penalties=newPenalty(data,'2026-11-30');const raw=JSON.stringify(data),{page}=await open(t,{raw,fixedTime:'2026-11-30T18:59:58Z'});await showHistory(page);assert.equal(await page.locator('[data-history-count]').textContent(),'1');
  await page.clock.fastForward(3000);await page.waitForFunction(()=>document.querySelector('[data-history-day="2026-12-01"][aria-current="date"]'));
- assert.equal(await page.locator('[data-history-count]').textContent(),'0');assert.equal(await page.locator('[data-history-day="2026-12-01"]').getAttribute('data-status'),'missed');await page.locator('[data-history-prev]').click();assert.equal(await page.locator('[data-history-count]').textContent(),'1');assert.equal(await saved(page),raw);
+ assert.equal(await page.locator('[data-history-count]').textContent(),'0');assert.equal(await page.locator('[data-history-day="2026-12-01"]').getAttribute('data-status'),'missed');await page.locator('[data-history-prev]').click();assert.equal(await page.locator('[data-history-count]').textContent(),'1');assert.deepEqual(JSON.parse(await saved(page)).checks,data.checks);
 });
 test('history uses the phone local date rather than the UTC date',async t=>{
  const data=defaults();data.checks={'2026-11-13':{walk:true}};data.xp=20;const {page}=await open(t,{raw:JSON.stringify(data),fixedTime:'2026-11-14T00:30:00Z',timezoneId:'America/Los_Angeles'});await showHistory(page);assert.equal(await page.locator('[data-history-day="2026-11-13"]').getAttribute('aria-current'),'date');assert.equal(await page.locator('[data-history-day="2026-11-14"]').getAttribute('data-status'),'future');assert.equal(await page.locator('[data-history-count]').textContent(),'1');
@@ -334,4 +334,13 @@ test('habit actions align on small screens and goal dates handle missing and exp
  await page.locator('[data-tab="habits"]').click();for(const width of [320,375,390,430]){await page.setViewportSize({width,height:740});const row=page.locator('.habit-row').first(),edit=await row.locator('.edit-habit').boundingBox(),del=await row.locator('.delete-action').boundingBox();assert.equal(edit.y,del.y);assert.equal(edit.height,del.height);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
  await page.locator('[data-tab="goals"]').click();const title=page.locator('.goal-name');assert.equal(await title.evaluate(e=>getComputedStyle(e).color),'rgb(244, 245, 247)');assert.equal(await title.evaluate(e=>getComputedStyle(e).fontSize),'16px');await title.click();assert.equal(await page.locator('#goalTarget,#goalDone').count(),0);await page.locator('#goalName').fill('Новое название');await page.locator('#goalForm [type=submit]').click();await toast(page,'Цель изменена');await page.waitForFunction(()=>!document.getElementById('goalDialog').open);let goal=JSON.parse(await saved(page)).goals[0];assert.equal(goal.done,4);assert.equal(goal.target,10);
  for(const [start,due,percent] of [['2026-11-14','2026-11-14','100'],['2026-11-01','2026-11-13','100'],['2026-11-20','2026-11-24','0'],['2026-11-14','',null]]){await page.locator('.goal-name').click();await page.locator('#goalStart').fill(start);await page.locator('#goalDue').fill(due);await page.locator('#goalForm [type=submit]').click();await toast(page,'Цель изменена');await page.waitForFunction(()=>!document.getElementById('goalDialog').open);if(percent===null)assert.equal(await page.locator('#goalList [role=progressbar]').count(),0);else assert.equal(await page.locator('#goalList [role=progressbar]').getAttribute('aria-valuenow'),percent)}assert.deepEqual(errors,[]);
+});
+test('missed habits deduct ten XP once after local midnight, respecting weekdays and completions',async t=>{
+ const data=defaults();data.tasks=[{id:'walk',name:'Ходьба',cat:'sport',days:[0,1,2,3,4,5,6]},{id:'read',name:'Чтение по пятницам',cat:'intellect',days:[5]}];data.legacyXp=100;data.xp=120;data.checks={'2026-11-12':{walk:true}};data.penalties=newPenalty(data,'2026-11-12');
+ const {page,errors}=await open(t,{raw:JSON.stringify(data),fixedTime:'2026-11-13T18:59:50Z'});assert.equal(await page.locator('#xp').textContent(),'120 XP');await page.locator('#tasks [data-task="walk"]').check();await toast(page,'+20 XP');assert.equal(await page.locator('#xp').textContent(),'140 XP');
+ await page.clock.fastForward(11000);await page.waitForFunction(()=>document.getElementById('xp').textContent==='130 XP');let savedData=JSON.parse(await saved(page));assert.equal(savedData.penalties.missed,1);assert.equal(savedData.penalties.deducted,10);await page.reload();assert.equal(await page.locator('#xp').textContent(),'130 XP');await page.locator('[data-tab="progressView"]').click();assert.ok((await page.locator('#penaltySummary').textContent()).includes('−10 XP'));await page.locator('[data-tab="dashboard"]').click();await page.locator('#tasks [data-task="walk"]').check();await toast(page,'+20 XP');assert.equal(await page.locator('#xp').textContent(),'150 XP');assert.deepEqual(errors,[]);
+});
+test('activation preserves a v4 copy and does not charge its old omissions; offline catch-up is idempotent',async t=>{
+ const data=defaults();data.version=4;delete data.penalties;data.tasks=data.tasks.slice(0,1);data.legacyXp=100;data.xp=100;const raw=JSON.stringify(data),{page,context}=await open(t,{raw,fixedTime:historyTime,serviceWorkers:'allow'});
+ assert.equal(await page.locator('#xp').textContent(),'100 XP');assert.equal(await page.evaluate(()=>localStorage.getItem('life-reset-v2-before-0.9.0')),raw);assert.equal(JSON.parse(await saved(page)).penalties.since,'2026-11-14');await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>navigator.serviceWorker.controller?.state==='activated');await context.setOffline(true);await page.clock.fastForward(2*86400000);await page.waitForFunction(()=>document.getElementById('xp').textContent==='80 XP');await page.reload();assert.equal(await page.locator('#xp').textContent(),'80 XP');assert.equal(JSON.parse(await saved(page)).penalties.missed,2);
 });
