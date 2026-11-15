@@ -40,7 +40,7 @@
    else if(button.hasAttribute('data-rank'))setXP((STAGES[Number(button.dataset.rank)].level-1)*500,{celebrate:true});
   }
   section.addEventListener('click',click);setXP(xp);
-  return {setXP,getXP:()=>currentXP,destroy(){destroyed=true;clearTimeout(timer);section.removeEventListener('click',click);container.replaceChildren()}};
+  return {setXP,setGender(gender){svg.dataset.gender=gender==='female'?'female':'male'},getXP:()=>currentXP,destroy(){destroyed=true;clearTimeout(timer);section.removeEventListener('click',click);container.replaceChildren()}};
  }
  root.LifeResetAvatar={mount};
 })(globalThis);
