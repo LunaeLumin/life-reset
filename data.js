@@ -174,6 +174,9 @@
     if(change(next)===false&&!settled&&!migrating)return {data:next,raw,changed:false};
     next.penalties.plan=planOf(next);
     const data=normalize(next);
+    // Removing earned XP must not leave an invisible debt after the zero floor.
+    data.penalties.deducted=Math.min(data.penalties.deducted,progress({...data,penalties:undefined}).xp);
+    data.xp=progress(data).xp;
     // The token is part of the same localStorage write as the user data.
     if(token!==undefined)data._writeToken=crypto.randomUUID();
     const serialized=JSON.stringify(data);

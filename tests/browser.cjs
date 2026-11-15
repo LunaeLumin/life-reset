@@ -1,3 +1,5 @@
+// Match fixture dates to the default phone time zone, including around UTC midnight.
+process.env.TZ='Asia/Qyzylorda';
 const {test,before,after}=require('node:test');
 const assert=require('node:assert/strict');
 const {chromium,devices}=require('playwright');
