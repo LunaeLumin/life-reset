@@ -1,4 +1,4 @@
-const CACHE='life-reset-v0.8.1';
+const CACHE='life-reset-v0.9.0';
 const FILES=['./','./index.html','./data.js','./progression.js','./avatar.css','./avatar-component.js','./avatar-demo.html','./history.css','./history.js','./features.js','./manifest.webmanifest','./icon.svg'];
 function fetchWithDeadline(request){
  const controller=new AbortController();let timer;

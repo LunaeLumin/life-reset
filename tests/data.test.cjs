@@ -16,7 +16,7 @@ function legacy(){
 }
 test('v2 retains earned XP, categories, focus, goals, money and unknown metadata',()=>{
  const raw={...legacy(),custom:{keep:true}};const next=normalize(raw);
- assert.equal(next.version,4);assert.equal(next.xp,120);assert.equal(next.legacyXp,100);
+ assert.equal(next.version,5);assert.equal(next.xp,120);assert.equal(next.legacyXp,100);
  assert.equal(next.legacyCounts.sport,1);assert.equal(next.focus,raw.focus);
  for(const key of ['checks','claimed','tx','custom'])assert.deepEqual(next[key],raw[key]);
  assert.deepEqual(normalize(next),next);assert.equal(raw.version,2);
@@ -132,6 +132,6 @@ test('recovery from corruption uses the captured fence; later writes cancel that
 });
 test('v3 migration preserves the exact original before a v4 write and rejects invalid new fields',async()=>{
  const {FEATURE_COPY}=require('../data.js');const old={...defaults(),version:3,goals:['Две одинаковые','Две одинаковые'],gender:undefined};old.tasks[0].cat='health';delete old.tasks[0].days;old.checks={'2026-11-13':{walk:true}};old.xp=20;const raw=JSON.stringify(old),{store,storage}=setup(raw);
- assert.equal(store.read().data.version,4);assert.equal(storage.getItem(KEY),raw);await store.update(n=>{n.gender='female'});assert.equal(storage.getItem(FEATURE_COPY),raw);assert.equal(store.read().data.xp,20);assert.equal(new Set(store.read().data.goals.map(g=>g.id)).size,2);
+ assert.equal(store.read().data.version,5);assert.equal(storage.getItem(KEY),raw);await store.update(n=>{n.gender='female'});assert.equal(storage.getItem(FEATURE_COPY),raw);assert.equal(store.read().data.xp,20);assert.equal(new Set(store.read().data.goals.map(g=>g.id)).size,2);
  for(const bad of [n=>n.gender='other',n=>n.tasks[0].days=[],n=>n.tasks[0].days=[1,1],n=>n.legacyCounts={health:'2'},n=>n.goals=[{id:'g',name:'x',created:'2026-11-14',due:'2026-11-13',target:10,done:1}]]){const n=defaults();bad(n);assert.throws(()=>normalize(n))}
 });
